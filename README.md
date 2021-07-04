@@ -15,14 +15,14 @@ The following hashing methods are currently available:
 
 Some functions were ported from CUDA implementations. Here's how they perform (the values are in GB/s):
 
-| Function | Native CUDA | SYCL running on DPC++ CUDA (nvptx64) | SYCL on ComputeCPP CPU (spir64) | SYCL on DPC++ CPU (spir64_x86_64) | 
-|----------|-------------|------------------------------|-----------------------------|-------------|
-| keccak   | 12.43       | 21.71                        | 3.99                        |  3.88       |
-| md5      | 11.90       | 19.61                        | 5.32                        |  0.313      |
-| blake2b  | 11.89       | 18.63                        | 8.10                        |  3.74       |
-| sha1     | 10.85       | 14.84                        | 3.48                        |  3.37       |
-| sha256   | 11.06       | 13.61                        | 2.11                        |  2.90       |
-| md2      | 3.94        | 3.28                         | 0.20                        |  0.112      |
+| Function | Native CUDA | SYCL on DPC++ CUDA (nvptx64) | SYCL on ComputeCPP CPU (spir64/spirv64) | SYCL on DPC++ CPU (spir64_x86_64) | SYCL on hipSYCL (omp/cuda)
+|----------|-------------|------------------------------|-----------------------------------------|-------------|------|
+| keccak   | 15.7       | 23.0                          | 4.14/4.08                               |  4.98       | 4.32/12.25 |
+| md5      | 14.6       | 20.2                          | 6.26/8.70                               |  10.5       | 9.27/19.8 |
+| blake2b  | 14.7       | 18.6                          | 8.10/7.85                               |  3.65       | 6.03/12.1 |
+| sha1     | 13.1       | 14.9                          | 3.61/1.53                               |  3.41       | 4.26/14.28 |
+| sha256   | 13.4       | 13.6                          | 2.23/2.00                               |  2.96       | 2.93/13.3 |
+| md2      | 4.18       | 3.28                          | 0.22/0.25                               |  0.112      | 0.25/1.91 |
 
 Benchmark configuration: 
 * block_size: 512 kiB
@@ -85,7 +85,7 @@ You may find [here](https://github.com/Michoumichmich/cuda-hashing-algos-with-be
 
 # Tested implementations
 * [Intel's clang](https://github.com/intel/llvm) with OpenCL on CPU (using Intel's driver) and [Codeplay's CUDA backend](https://www.codeplay.com/solutions/oneapi/for-cuda/)
-* [hipSYCL](https://github.com/illuhad/hipSYCL) on macOS with the OpenMP backend
+* [hipSYCL](https://github.com/illuhad/hipSYCL) on macOS with the OpenMP backend (set `hipSYCL_DIR` then `cmake .. -DHIPSYCL_TARGETS="..."`)
 * [ComputeCPP](https://developer.codeplay.com/products/computecpp/ce/home) you can build with `cmake .. -DComputeCpp_DIR=/path_to_computecpp -DCOMPUTECPP_BITCODE=spir64 -DCMAKE_BUILD_TYPE=Release`, Tested on the host device, `spir64` and `spirv64`. See [ComputeCpp SDK](https://github.com/codeplaysoftware/computecpp-sdk)
 
 
