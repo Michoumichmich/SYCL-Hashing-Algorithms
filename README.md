@@ -11,9 +11,9 @@ The following hashing methods are currently available:
 * sha3 (224 256 384 512)
 * blake2b
 
-## Performance
+## Benchmarks
 
-Some functions were ported from CUDA implementations. Here's how they perform (the values are in GB/s):
+Some functions were ported from a CUDA implementation. The SYCL code was tested unchanged across the different implementations and hardware. Here's how they perform (the values are in GB/s):
 
 | Function | Native CUDA | SYCL on DPC++ CUDA (nvptx64) | SYCL on ComputeCPP CPU (spir64/spirv64) | SYCL on DPC++ CPU (spir64_x86_64) | SYCL on hipSYCL (omp/cuda)
 |----------|-------------|------------------------------|-----------------------------------------|-------------|------|
