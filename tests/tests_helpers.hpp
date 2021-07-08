@@ -54,28 +54,36 @@ void duplicate(byte *in, byte *out, dword item_len, dword count) {
     }
 }
 
+std::vector<sycl::queue> get_all_queues() {
+    std::vector<sycl::device> devices1 = sycl::device::get_devices();
+    std::vector<sycl::queue> queues1;
+    std::for_each(devices1.begin(), devices1.end(), [&](auto &d) { queues1.emplace_back(try_get_queue_with_device(d)); });
+    return queues1;
+}
+
 template<typename Func>
 void for_all_workers(Func f) {
-    std::vector<sycl::device> devices = sycl::device::get_devices();
+    auto queues = get_all_queues();
     {
-        for (auto &dev: devices) {
-            std::cout << "Running on: " << dev.get_info<sycl::info::device::name>() << std::endl;
-            f(hash::runners(1, hash::runner{try_get_queue_with_device(dev), 1}));
+        for (const auto &q: queues) {
+            std::cout << "Running on: " << q.get_device().get_info<sycl::info::device::name>() << std::endl;
+            f(hash::runners(1, hash::runner{q, 1}));
         }
     }
 }
 
+
 template<typename Func>
 void for_all_workers_pairs(Func f) {
-    std::vector<sycl::device> devices = sycl::device::get_devices();
-    {
-        for (auto &dev1: devices) {
-            for (auto &dev2: devices) {
-                std::cout << "Running on: " << dev1.get_info<sycl::info::device::name>() << " and: " << dev2.get_info<sycl::info::device::name>() << std::endl;
-                f({{try_get_queue_with_device(dev1), 1},
-                   {try_get_queue_with_device(dev2), 1}});
-            }
-
+    auto queues1 = get_all_queues();
+    auto queues2 = get_all_queues();
+    for (auto q1: queues1) {
+        for (auto q2: queues2) {
+            std::cout << "Running on: " << q1.get_device().get_info<sycl::info::device::name>() << " and: " << q2.get_device().get_info<sycl::info::device::name>() << std::endl;
+            f({{q1, 1},
+               {q2, 1}});
         }
+
     }
+
 }
