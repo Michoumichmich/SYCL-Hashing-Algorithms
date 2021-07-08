@@ -19,7 +19,6 @@ limitations under the License. */
 #include <sycl_hash.hpp>
 #include <tools/sycl_queue_helpers.hpp>
 #include "src/benchmarks/misc.hpp"
-#include <hash_class.hpp>
 
 int main() {
     size_t input_block_size = 512 * 1024; //bytes

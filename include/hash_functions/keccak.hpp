@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config.hpp>
+#include <internal/config.hpp>
 #include <tools/usm_smart_ptr.hpp>
 
 
@@ -10,8 +10,9 @@ constexpr dword KECCAK_Q_SIZE = 192;
 
 namespace hash::internal {
 
-    template <dword n_outbit>
-    class keccak_kernel{};
+    template<dword n_outbit>
+    class keccak_kernel {
+    };
 
     using namespace usm_smart_ptr;
 

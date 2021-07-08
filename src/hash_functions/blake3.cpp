@@ -1,5 +1,5 @@
 #include <hash_functions/blake3.hpp>
-#include <determine_kernel_config.hpp>
+#include <internal/determine_kernel_config.hpp>
 #include <cstring>
 
 #define MAX_SIMD_DEGREE 1

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <utility>
-#include <config.hpp>
-#include <tools/usm_smart_ptr.hpp>
+#include "config.hpp"
+#include "../tools/usm_smart_ptr.hpp"
 
 
 namespace hash {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config.hpp>
+#include <internal/config.hpp>
 #include <tools/usm_smart_ptr.hpp>
 
 constexpr dword MD2_BLOCK_SIZE = 16;

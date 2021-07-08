@@ -1,6 +1,6 @@
 #pragma once
 
-#include <config.hpp>
+#include <internal/config.hpp>
 #include <tools/usm_smart_ptr.hpp>
 
 constexpr dword BLAKE2B_ROUNDS = 12;
@@ -24,7 +24,7 @@ struct blake2b_ctx {
 
 namespace hash::internal {
     class blake2b_kernel;
-    
+
     using namespace usm_smart_ptr;
 
     usm_shared_ptr<blake2b_ctx, alloc::device> get_blake2b_ctx(sycl::queue &q, const byte *key, dword keylen, dword n_outbit);

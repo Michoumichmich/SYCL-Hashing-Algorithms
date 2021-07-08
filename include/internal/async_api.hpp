@@ -1,7 +1,7 @@
 #pragma once
 
 #include <utility>
-#include "sycl_hash.hpp"
+#include "common.hpp"
 #include "handle.hpp"
 
 namespace hash {
@@ -171,7 +171,7 @@ namespace hash {
         hash::runners runners_;
         std::vector<sycl::buffer<qword, 1> > buffers_ivs_;
         std::vector<sycl::buffer<byte, 2> > buffers_sigmas_;
-        std::vector<usm_shared_ptr<blake2b_ctx, alloc::device>> keyed_ctxts_;
+        std::vector<usm_shared_ptr < blake2b_ctx, alloc::device>> keyed_ctxts_;
     public:
         explicit hasher(const hash::runners &v, const byte *key, dword keylen) : runners_(v) {
             size_t size = v.size();

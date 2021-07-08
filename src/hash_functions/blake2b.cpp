@@ -1,5 +1,5 @@
 #include <hash_functions/blake2b.hpp>
-#include <determine_kernel_config.hpp>
+#include <internal/determine_kernel_config.hpp>
 
 #include <cstring>
 #include <utility>

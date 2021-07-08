@@ -2,9 +2,9 @@
  * Tests from https://github.com/B-Con/crypto-algorithms
  */
 
+#include <sycl_hash.hpp>
 #include "tests_helpers.hpp"
 #include <gtest/gtest.h>
-#include "hash_class.hpp"
 
 constexpr size_t loop_count = 229;
 

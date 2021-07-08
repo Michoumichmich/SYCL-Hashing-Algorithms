@@ -33,10 +33,12 @@ set(sycl_hash_all_kernels
 set(sycl_hash_all_sources
         src/benchmarks/misc.hpp
         include/sycl_hash.hpp
-        include/hash_class.hpp
-        include/handle.hpp
-        include/config.hpp
-        include/determine_kernel_config.hpp
+        include/internal/config.hpp
+        include/internal/handle.hpp
+        include/internal/common.hpp
+        include/internal/determine_kernel_config.hpp
+        include/internal/sync_api.hpp
+        include/internal/async_api.hpp
         include/hash_functions/sha256.hpp
         include/hash_functions/blake2b.hpp
         include/hash_functions/sha1.hpp
