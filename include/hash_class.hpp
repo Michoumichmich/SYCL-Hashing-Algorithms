@@ -23,7 +23,7 @@ namespace hash {
             handles.reserve(size);
             auto items = internal::get_hash_queue_work_item<M, n_outbit>(runners_, indata, inlen, outdata, n_batch);
             for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_launcher<M, n_outbit>(items[i], inlen, key, keylen));
+                handles.emplace_back(internal::hash_with_data_copy<M, n_outbit>(items[i], key, keylen));
             }
             return handle(std::move(handles));
         }
@@ -60,7 +60,7 @@ namespace hash {
             handles.reserve(size);
             auto items = hash::internal::get_hash_queue_work_item<method::sha256, 0>(runners_, indata, inlen, outdata, n_batch);
             for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_launcher<method::sha256, 0, sycl::buffer<dword, 1> >(items[i], inlen, nullptr, 0, buffers_[i]));
+                handles.emplace_back(internal::hash_with_data_copy<method::sha256, 0, sycl::buffer<dword, 1> >(items[i], nullptr, 0, buffers_[i]));
             }
             return handle(std::move(handles));
         }
@@ -91,7 +91,7 @@ namespace hash {
             handles.reserve(size);
             auto items = internal::get_hash_queue_work_item<method::md2, 0>(runners_, indata, inlen, outdata, n_batch);
             for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_launcher<method::md2, 0, sycl::buffer<byte, 1> >(items[i], inlen, nullptr, 0, buffers_[i]));
+                handles.emplace_back(internal::hash_with_data_copy<method::md2, 0, sycl::buffer<byte, 1> >(items[i], nullptr, 0, buffers_[i]));
             }
             return handle(std::move(handles));
         }
@@ -122,7 +122,7 @@ namespace hash {
             handles.reserve(size);
             auto items = internal::get_hash_queue_work_item<method::keccak, n_outbit>(runners_, indata, inlen, outdata, n_batch);
             for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_launcher<method::keccak, n_outbit, sycl::buffer<qword, 1> >(items[i], inlen, nullptr, 0, buffers_[i]));
+                handles.emplace_back(internal::hash_with_data_copy<method::keccak, n_outbit, sycl::buffer<qword, 1> >(items[i], nullptr, 0, buffers_[i]));
             }
             return handle(std::move(handles));
         }
@@ -153,7 +153,7 @@ namespace hash {
             handles.reserve(size);
             auto items = internal::get_hash_queue_work_item<method::sha3, n_outbit>(runners_, indata, inlen, outdata, n_batch);
             for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_launcher<method::sha3, n_outbit, sycl::buffer<qword, 1> >(items[i], inlen, nullptr, 0, buffers_[i]));
+                handles.emplace_back(internal::hash_with_data_copy<method::sha3, n_outbit, sycl::buffer<qword, 1>>(items[i], nullptr, 0, buffers_[i]));
             }
             return handle(std::move(handles));
         }
@@ -195,7 +195,7 @@ namespace hash {
             handles.reserve(2 * size);
             auto items = internal::get_hash_queue_work_item<method::blake2b, n_outbit>(runners_, indata, inlen, outdata, n_batch);
             for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_launcher<method::blake2b, n_outbit>(items[i], inlen, nullptr, 0, buffers_ivs_[i], buffers_sigmas_[i], keyed_ctxts_[i].get()));
+                handles.emplace_back(internal::hash_with_data_copy<method::blake2b, n_outbit>(items[i], nullptr, 0, buffers_ivs_[i], buffers_sigmas_[i], keyed_ctxts_[i].get()));
             }
             return handle(std::move(handles));
         }
