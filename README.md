@@ -69,6 +69,12 @@ int main(){
     byte output[n_blocks * hash_size]; // reserve space for the output
     
     compute<method::sha256>(cuda_q, input, item_size, output, n_blocks); // do the computing
+    compute_sha256(cuda_q, input, item_size, output, n_blocks); // identical
+    
+    /**
+     * For SHA3 one could write:
+     * compute_sha3<512>(cuda_q, input, item_size, output, n_blocks);
+     */
     
     return 0;
 }
@@ -87,10 +93,6 @@ You may find [here](https://github.com/Michoumichmich/cuda-hashing-algos-with-be
 * [Intel's clang](https://github.com/intel/llvm) with OpenCL on CPU (using Intel's driver) and [Codeplay's CUDA backend](https://www.codeplay.com/solutions/oneapi/for-cuda/)
 * [hipSYCL](https://github.com/illuhad/hipSYCL) on macOS with the OpenMP backend (set `hipSYCL_DIR` then `cmake .. -DHIPSYCL_TARGETS="..."`)
 * [ComputeCPP](https://developer.codeplay.com/products/computecpp/ce/home) you can build with `cmake .. -DComputeCpp_DIR=/path_to_computecpp -DCOMPUTECPP_BITCODE=spir64 -DCMAKE_BUILD_TYPE=Release`, Tested on the host device, `spir64` and `spirv64`. See [ComputeCpp SDK](https://github.com/codeplaysoftware/computecpp-sdk)
-
-
-# Contact
-You can send a mail to `0_torte.say at icloud dot com`
 
 # Acknowledgements
 

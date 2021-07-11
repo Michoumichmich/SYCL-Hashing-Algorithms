@@ -2,7 +2,6 @@
 #include <internal/determine_kernel_config.hpp>
 
 #include <cstring>
-#include <utility>
 
 using namespace usm_smart_ptr;
 
@@ -28,15 +27,6 @@ static inline qword keccak_leuint64(const void *in) {
     return a;
 }
 
-static inline int64_t keccak_MIN(int64_t a, int64_t b) {
-    if (a > b) return b;
-    return a;
-}
-
-static inline qword keccak_UMIN(qword a, qword b) {
-    if (a > b) return b;
-    return a;
-}
 
 template<qword rate_bits>
 static inline void keccak_extract(keccak_ctx_t *ctx) {
@@ -245,7 +235,7 @@ static inline void keccak_update(keccak_ctx_t *ctx, const byte *in, qword inlen,
                 count += rate_BYTEs;
             } while (count <= ((int64_t) (inlen - rate_BYTEs)));
         } else {
-            qword partial = keccak_UMIN(rate_BYTEs - BYTEs, inlen - (qword) count);
+            qword partial = sycl::min(rate_BYTEs - BYTEs, inlen - (qword) count);
             memcpy(ctx->q + BYTEs, in + count, partial);
 
             BYTEs += partial;
@@ -283,7 +273,7 @@ static inline void keccak_final(bool is_sha3, keccak_ctx_t *ctx, byte *out, cons
             ctx->bits_in_queue = rate_bits;
         }
 
-        qword partial_block = keccak_UMIN(ctx->bits_in_queue, digest_bit_len - i);
+        qword partial_block = sycl::min(ctx->bits_in_queue, digest_bit_len - i);
         memcpy(out + (i >> 3), ctx->q + (rate_BYTEs - (ctx->bits_in_queue >> 3)), partial_block >> 3);
         ctx->bits_in_queue -= partial_block;
         i += partial_block;

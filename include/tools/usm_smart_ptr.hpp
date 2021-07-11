@@ -12,7 +12,7 @@ namespace cl::sycl::usm {
 #endif
 
 
-#include <tools/missing_implementations.hpp>
+#include "missing_implementations.hpp"
 
 
 namespace usm_smart_ptr {

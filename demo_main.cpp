@@ -33,6 +33,9 @@ int main() {
 //    double gpu_speed = benchmark_one_queue<hash::method::sha256>(cuda_q, input_block_size, n_blocs, 5);
 //    hash::sha256 hasher({{cpu_q,  cpu_speed}, {cuda_q, gpu_speed}});
 //    auto e = hasher.hash(ptr, input_block_size, out, 100);
+//    hash::compute_md2(cpu_q, ptr, input_block_size, out, n_blocs);
+//    hash::compute_sha3<512>(cpu_q, ptr, input_block_size, out, n_blocs);
+
 
     //GPU
     run_benchmark<hash::method::keccak, 128>(cuda_q, input_block_size, n_blocs, n_iters);

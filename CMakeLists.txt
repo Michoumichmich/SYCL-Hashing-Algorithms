@@ -3,8 +3,8 @@ project(SYCL_HASH LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # If you're using the DPCPP compiler, these flags will be used. Set here the devies you want to target
-set(DPCPP_FLAGS -fsycl -fsycl-targets=nvptx64-nvidia-cuda -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
-#set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice,nvptx64-nvidia-cuda -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
+#set(DPCPP_FLAGS -fsycl -fsycl-targets=nvptx64-nvidia-cuda-sycldevice--sm_75 -Wno-unknown-cuda-vermsion -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
+set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice,nvptx64-nvidia-cuda -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
 include(cmake/FindSYCL.cmake)
 
 # Default C++ Flags for warnings and optimisation

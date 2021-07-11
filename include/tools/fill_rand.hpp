@@ -4,7 +4,7 @@
 #include <random>
 #include <algorithm>
 #include <type_traits>
-#include <tools/usm_smart_ptr.hpp>
+#include "usm_smart_ptr.hpp"
 
 using namespace usm_smart_ptr;
 

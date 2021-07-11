@@ -55,7 +55,7 @@ void duplicate(byte *in, byte *out, dword item_len, dword count) {
 }
 
 std::vector<sycl::queue> get_all_queues() {
-    std::vector<sycl::device> devices1 = sycl::device::get_devices();
+    static std::vector<sycl::device> devices1 = sycl::device::get_devices();
     std::vector<sycl::queue> queues1;
     std::for_each(devices1.begin(), devices1.end(), [&](auto &d) { queues1.emplace_back(try_get_queue_with_device(d)); });
     return queues1;

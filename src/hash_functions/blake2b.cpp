@@ -2,7 +2,6 @@
 #include <internal/determine_kernel_config.hpp>
 
 #include <cstring>
-#include <utility>
 
 #include <tools/usm_smart_ptr.hpp>
 

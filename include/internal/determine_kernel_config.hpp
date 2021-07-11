@@ -13,7 +13,7 @@ namespace hash::internal {
     };
 
 
-    static inline kernel_config get_kernel_sizes(const sycl::queue &q, size_t job_size) {
+    inline kernel_config get_kernel_sizes(const sycl::queue &q, size_t job_size) {
         kernel_config config{.wg_size= 1, .block= job_size};
         if (q.get_device().is_gpu()) {
             /**

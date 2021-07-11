@@ -1,11 +1,11 @@
 #pragma once
 
-#include <hash_functions/sha256.hpp>
-#include <hash_functions/keccak.hpp>
-#include <hash_functions/blake2b.hpp>
-#include <hash_functions/md5.hpp>
-#include <hash_functions/md2.hpp>
-#include <hash_functions/sha1.hpp>
+#include "../hash_functions/sha256.hpp"
+#include "../hash_functions/keccak.hpp"
+#include "../hash_functions/blake2b.hpp"
+#include "../hash_functions/md5.hpp"
+#include "../hash_functions/md2.hpp"
+#include "../hash_functions/sha1.hpp"
 
 #include "handle.hpp"
 
@@ -43,8 +43,7 @@ namespace hash {
      * @return
      */
     template<method M, typename = std::enable_if_t<M != method::keccak && M != method::blake2b && M != method::sha3> >
-
-    static constexpr size_t get_block_size() {
+    inline constexpr size_t get_block_size() {
         if constexpr(M == method::sha256) {
             return SHA256_BLOCK_SIZE;
         } else if constexpr (M == method::md5) {
@@ -65,7 +64,7 @@ namespace hash {
      * @return
      */
     template<hash::method M, int n_outbit>
-    static constexpr size_t get_block_size() {
+    inline constexpr size_t get_block_size() {
         if constexpr (M == hash::method::keccak && (n_outbit == 128 || n_outbit == 224 || n_outbit == 256 || n_outbit == 288 || n_outbit == 384 || n_outbit == 512)) {
             return n_outbit >> 3;
         } else if constexpr (M == hash::method::sha3 && (n_outbit == 224 || n_outbit == 256 || n_outbit == 384 || n_outbit == 512)) {
@@ -84,7 +83,7 @@ namespace hash {
      * @return
      */
     template<method M, int n_outbit = 0>
-    static std::string get_name() {
+    inline std::string get_name() {
         if constexpr(M == method::sha256) {
             return {"sha256"};
         } else if constexpr(M == method::md5) {
@@ -123,7 +122,7 @@ namespace hash {
          * @return
          */
         template<method M, int n_outbit = 0>
-        [[nodiscard]] static std::vector<queue_work> get_hash_queue_work_item(const ::hash::runners &v, const byte *in, dword inlen, byte *out, dword n_batch) {
+        [[nodiscard]] inline std::vector<queue_work> get_hash_queue_work_item(const ::hash::runners &v, const byte *in, dword inlen, byte *out, dword n_batch) {
             size_t len = v.size();
             std::vector<queue_work> out_vector(len);
             std::vector<size_t> batch_offsets(len + 1);
@@ -158,7 +157,7 @@ namespace hash {
          * @return A SYCL event.
          */
         template<method M, int n_outbit, typename... buffers>
-        [[nodiscard]] sycl::event
+        [[nodiscard]] inline sycl::event
         dispatch_hash(sycl::queue &q, const sycl::event &e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, const byte *key, dword keylen,
                       buffers... bufs) {
             if (n_batch == 0) return sycl::event{};
@@ -195,7 +194,7 @@ namespace hash {
          * @return a handle struct that holds the unique pointers to the data used by the device that's running and the event that indicates wheter a device fiinished running
          */
         template<hash::method M, int n_outbit, typename... buffers>
-        [[nodiscard]] hash::handle_item hash_with_data_copy(hash::internal::queue_work q_work, const byte *key, dword keylen, buffers... bufs) {
+        [[nodiscard]] inline hash::handle_item hash_with_data_copy(hash::internal::queue_work q_work, const byte *key, dword keylen, buffers... bufs) {
             auto[q, in_ptr, out_ptr, batch_size, inlen] = std::move(q_work);
 #ifdef USING_COMPUTECPP
             auto device_indata = hash::make_unique_ptr<byte, hash::alloc::device>(inlen * batch_size + (inlen ? 0 : 1), q); // TODO ComputeCpp runtime throws error when ptr size is 0

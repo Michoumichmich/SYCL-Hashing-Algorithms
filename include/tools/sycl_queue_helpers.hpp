@@ -2,6 +2,7 @@
 
 #include <sycl/sycl.hpp>
 #include <iostream>
+#include "../internal/common.hpp"
 
 #ifdef USING_COMPUTECPP
 class queue_kernel_tester;
@@ -31,7 +32,7 @@ void queue_tester(sycl::queue &q);
  * that the translation unit needs to be compiler with support for the device you're selecting.
  */
 template<bool strict = true, typename T>
-static inline sycl::queue try_get_queue(const T &selector) {
+inline sycl::queue try_get_queue(const T &selector) {
     auto exception_handler = [](const sycl::exception_list &exceptions) {
         for (std::exception_ptr const &e : exceptions) {
             try {
@@ -51,13 +52,23 @@ static inline sycl::queue try_get_queue(const T &selector) {
     try {
         dev = sycl::device(selector);
         q = sycl::queue(dev, exception_handler);
-        if constexpr (strict) {
-            if (dev.is_cpu() || dev.is_gpu()) { //Only CPU and GPU not host, dsp, fpga, ?...
-                queue_tester(q);
+
+        try {
+            if constexpr (strict) {
+                if (dev.is_cpu() || dev.is_gpu()) { //Only CPU and GPU not host, dsp, fpga, ?...
+                    queue_tester(q);
+                }
             }
+        } catch (...) {
+            std::cerr << "Warning: " << dev.get_info<sycl::info::device::name>() << " found but not working! Fall back on: ";
+            dev = sycl::device(sycl::host_selector());
+            q = sycl::queue(dev, exception_handler);
+            std::cerr << dev.get_info<sycl::info::device::name>() << '\n';
+            return q;
         }
     }
     catch (...) {
+
         dev = sycl::device(sycl::host_selector());
         q = sycl::queue(dev, exception_handler);
         std::cerr << "Warning: Expected device not found! Fall back on: " << dev.get_info<sycl::info::device::name>() << '\n';
@@ -66,7 +77,7 @@ static inline sycl::queue try_get_queue(const T &selector) {
 }
 
 template<typename T, bool debug = false>
-bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
+inline bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
     try {
         sycl::get_pointer_device(ptr, q.get_context());
         sycl::usm::alloc alloc_type = sycl::get_pointer_type(ptr, q.get_context());
@@ -97,5 +108,24 @@ bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
             std::cerr << "Not allocated on:" << q.get_device().get_info<sycl::info::device::name>() << '\n';
         }
         return false;
+    }
+}
+
+
+/**
+ * Usefull for memory bound computation.
+ * Returns CPU devices that represents different numa nodes.
+ * @return
+ */
+inline hash::runners get_cpu_runners_numa() {
+    try {
+        sycl::device d{sycl::cpu_selector{}};
+        auto numa_nodes = d.create_sub_devices<sycl::info::partition_property::partition_by_affinity_domain>(sycl::info::partition_affinity_domain::numa);
+        hash::runners runners_;
+        std::transform(numa_nodes.begin(), numa_nodes.end(), runners_.begin(), [](auto &dev) -> hash::runner { return {try_get_queue(dev), 1}; });
+        return runners_;
+    }
+    catch (...) {
+        return {{sycl::queue{sycl::host_selector{}}, 1}};
     }
 }
