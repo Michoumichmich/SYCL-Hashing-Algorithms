@@ -4,6 +4,7 @@
 #include "common.hpp"
 
 #include "../tools/missing_implementations.hpp"
+#include "../tools/sycl_queue_helpers.hpp"
 
 #include <type_traits>
 #include <future>
@@ -25,7 +26,11 @@ namespace hash {
      */
     template<method M, typename = std::enable_if_t<M != method::keccak && M != method::sha3 && M != method::blake2b> >
     inline void compute(sycl::queue &q, const byte *in, dword inlen, byte *out, dword n_batch) {
-        internal::hash_with_data_copy<M, 0>({q, in, out, n_batch, inlen}, nullptr, 0).dev_e_.wait();
+        if (is_ptr_usable(in, q) && is_ptr_usable(out, q)) {
+            internal::dispatch_hash<M, 0>(q, sycl::event{}, device_accessible_ptr<byte>(in), device_accessible_ptr<byte>(out), inlen, n_batch, nullptr, 0).wait();
+        } else {
+            internal::hash_with_data_copy<M, 0>({q, in, out, n_batch, inlen}, nullptr, 0).dev_e_.wait();
+        }
     }
 
     /**
@@ -40,7 +45,11 @@ namespace hash {
      */
     template<method M, int n_outbit, typename = std::enable_if_t<M == method::keccak || M == method::sha3 >>
     inline void compute(sycl::queue &q, const byte *in, dword inlen, byte *out, dword n_batch) {
-        internal::hash_with_data_copy<M, n_outbit>({q, in, out, n_batch, inlen}, nullptr, 0).dev_e_.wait();
+        if (is_ptr_usable(in, q) && is_ptr_usable(out, q)) {
+            internal::dispatch_hash<M, n_outbit>(q, sycl::event{}, device_accessible_ptr<byte>(in), device_accessible_ptr<byte>(out), inlen, n_batch, nullptr, 0).wait();
+        } else {
+            internal::hash_with_data_copy<M, n_outbit>({q, in, out, n_batch, inlen}, nullptr, 0).dev_e_.wait();
+        }
     }
 
     /**
@@ -55,10 +64,14 @@ namespace hash {
      */
     template<method M, int n_outbit, typename = std::enable_if_t<M == method::blake2b>>
     inline void compute(sycl::queue &q, const byte *in, dword inlen, byte *out, dword n_batch, byte *key, dword keylen) {
-        internal::hash_with_data_copy<M, n_outbit>({q, in, out, n_batch, inlen}, key, keylen).dev_e_.wait();
+        if (is_ptr_usable(in, q) && is_ptr_usable(out, q)) {
+            internal::dispatch_hash<M, n_outbit>(q, sycl::event{}, device_accessible_ptr<byte>(in), device_accessible_ptr<byte>(out), inlen, n_batch, key, keylen).wait();
+        } else {
+            internal::hash_with_data_copy<M, n_outbit>({q, in, out, n_batch, inlen}, key, keylen).dev_e_.wait();
+        }
     }
 
-
+#ifndef IMPLICIT_MEMORY_COPY
     /**
      * Computes synchronously a hash.
      * This overload does not perform any memory operation. We assume memory is accessible in read and write by the
@@ -110,6 +123,9 @@ namespace hash {
     inline void compute(sycl::queue &q, const device_accessible_ptr<byte> indata, dword inlen, device_accessible_ptr<byte> outdata, dword n_batch, const byte *key, dword keylen) {
         internal::dispatch_hash<M, n_outbit>(q, sycl::event{}, indata, outdata, inlen, n_batch, key, keylen).wait();
     }
+
+#endif
+
 
 #define alias_sync_compute(alias_name, method)  \
     template <typename... Args> \

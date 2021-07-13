@@ -2,9 +2,22 @@ cmake_minimum_required(VERSION 3.9)
 project(SYCL_HASH LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+option(USE_IMPLICIT_MEMCPY "EXPERIMENTAL: The runtime will try to detect whether your memory was allocated on the device and move memory accordingly. Require msync hack." OFF)
+if (USE_IMPLICIY_MEMCPY)
+    message(WARNING "Using experimental implicit memory copy. The SYCL spec is unclear on the host device behaviour. Behaviour can be implementation defined.")
+    add_definitions(-DIMPLICIT_MEMORY_COPY)
+endif ()
+
+option(VERBOSE_LIB "Adds various prints in the code" OFF)
+if (VERBOSE_LIB)
+    message(WARNING "Verbose mode on. Did you forget it?")
+    add_definitions(-DVERBOSE_HASH_LIB)
+endif ()
+
+
 # If you're using the DPCPP compiler, these flags will be used. Set here the devies you want to target
-#set(DPCPP_FLAGS -fsycl -fsycl-targets=nvptx64-nvidia-cuda-sycldevice--sm_75 -Wno-unknown-cuda-vermsion -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
-set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice,nvptx64-nvidia-cuda -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
+set(DPCPP_FLAGS -fsycl -fsycl-targets=nvptx64-nvidia-cuda-sycldevice -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
+#set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice)
 include(cmake/FindSYCL.cmake)
 
 # Default C++ Flags for warnings and optimisation
@@ -14,8 +27,8 @@ set(DISABLED_WARNINGS "-Wno-c++20-extensions -Wno-inline-namespace-reopened-noni
 set(OPT_FLAGS "-march=native -mtune=native -Ofast -fomit-frame-pointer")
 
 # Adding the flags to the targets
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_FLAGS} ${DISABLED_WARNINGS} -pthread")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${WARNING_FLAGS} ${EXTRA_W_FLAGS} ${DISABLED_WARNINGS} -g -Og -v -pthread")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_FLAGS} ${DISABLED_WARNINGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${WARNING_FLAGS} ${EXTRA_W_FLAGS} ${DISABLED_WARNINGS} -g -Og -v")
 
 include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/include)
 

@@ -195,6 +195,10 @@ namespace hash {
          */
         template<hash::method M, int n_outbit, typename... buffers>
         [[nodiscard]] inline hash::handle_item hash_with_data_copy(hash::internal::queue_work q_work, const byte *key, dword keylen, buffers... bufs) {
+#ifdef VERBOSE_HASH_LIB
+            std::cerr << "[Warning] Running " << hash::get_name<M, n_outbit>() << " with memory copy on " << q_work.q.get_device().get_info<sycl::info::device::name>()
+                      << ". Consider passing USM memory to sycl_hash.\n";
+#endif
             auto[q, in_ptr, out_ptr, batch_size, inlen] = std::move(q_work);
 #ifdef USING_COMPUTECPP
             auto device_indata = hash::make_unique_ptr<byte, hash::alloc::device>(inlen * batch_size + (inlen ? 0 : 1), q); // TODO ComputeCpp runtime throws error when ptr size is 0

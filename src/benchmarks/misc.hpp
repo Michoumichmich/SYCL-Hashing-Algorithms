@@ -53,7 +53,9 @@ double benchmark_one_queue(sycl::queue q, size_t input_block_size, size_t n_bloc
         hash::compute<M, args...>(q, all_input_data.get(), input_block_size, all_output_hashes.get(), n_blocs, key, 64);/* Preheat */
         auto before = std::chrono::steady_clock::now();
         for (size_t i = 0; i < n_iters; ++i) {
+#ifdef VERBOSE_HASH_LIB
             std::cerr << i << "  ";
+#endif
             hash::compute<M, args...>(q, all_input_data.get(), input_block_size, all_output_hashes.get(), n_blocs, key, 64);
         }
         auto after = std::chrono::steady_clock::now();
@@ -63,7 +65,9 @@ double benchmark_one_queue(sycl::queue q, size_t input_block_size, size_t n_bloc
         hash::compute<M, args...>(q, all_input_data.get(), input_block_size, all_output_hashes.get(), n_blocs);/* Preheat */
         auto before = std::chrono::steady_clock::now();
         for (size_t i = 0; i < n_iters; ++i) {
+#ifdef VERBOSE_HASH_LIB
             std::cerr << i << "  ";
+#endif
             hash::compute<M, args...>(q, all_input_data.get(), input_block_size, all_output_hashes.get(), n_blocs);
         }
         auto after = std::chrono::steady_clock::now();
@@ -76,13 +80,6 @@ double benchmark_one_queue(sycl::queue q, size_t input_block_size, size_t n_bloc
 template<hash::method M, int ... args>
 void run_benchmark(sycl::queue q, size_t input_block_size, size_t n_blocs, size_t n_iters) {
     std::cout << "Running " << hash::get_name<M, args...>() << " on:" << q.get_device().get_info<sycl::info::device::name>() << ": ";
-
     auto gflops = benchmark_one_queue<M, args...>(q, input_block_size, n_blocs, n_iters);
-    std::cout << std::endl << "GB hashed per sec: " << gflops << std::endl;
-    //std::cout << "Hash Rate: " << (double) n_iters / time * (double) (input_block_size * n_blocs / hash::get_block_size<M, args...>()) / 1e3 << " Mh/s" << std::endl;
-
-    // std::cout << "Res: ";
-    // for (size_t i = 0; i < hash::get_block_size<M, args...>(); ++i) // only the first block
-    //     std::cout << std::hex << std::setfill('0') << std::setw(2) << (int) (hash::get_block_size<M, args...>().raw()[i]) << " ";
-    std::cout << std::endl;
+    std::cout << "\nGB hashed per sec: " << gflops << "\n\n";
 }

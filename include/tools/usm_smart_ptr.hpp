@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sycl/sycl.hpp>
+#include "../internal/config.hpp"
 #include <memory>
 #include <utility>
 #include <type_traits>
@@ -28,7 +29,15 @@ namespace usm_smart_ptr {
          * Explicit conversion needed if the memory is not shared
          * @return
          */
+#ifdef IMPLICIT_MEMORY_COPY
+
+        operator T *() const noexcept { return val_; }
+
+#else
+
         explicit operator T *() const noexcept { return val_; }
+
+#endif
         //explicit(Tag != sycl::usm::alloc::shared) operator T *() const noexcept { return val_; }
 
     private:
@@ -39,6 +48,8 @@ namespace usm_smart_ptr {
     template<typename T>
     struct device_accessible_ptr {
         explicit device_accessible_ptr(T *p) : val_((T *) p) {};
+
+        explicit device_accessible_ptr(const T *p) : val_((T *) p) {};
 
         device_accessible_ptr(usm_ptr<T, alloc::shared> p) : val_((T *) p) {};
 

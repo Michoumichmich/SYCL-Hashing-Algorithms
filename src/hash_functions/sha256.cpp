@@ -168,7 +168,7 @@ static void kernel_sha256_hash(const byte *indata, dword inlen, byte *outdata, d
 namespace hash::internal {
 
     sycl::buffer<dword, 1> get_sha256_buffer() {
-        sycl::buffer<dword, 1> buf {GLOBAL_SHA256_CONSTS, sycl::range<1>(64)};
+        sycl::buffer<dword, 1> buf{GLOBAL_SHA256_CONSTS, sycl::range<1>(64)};
         buf.set_final_data(nullptr);
         buf.set_write_back(false);
         return buf;

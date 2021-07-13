@@ -188,14 +188,14 @@ static inline void kernel_blake2b_hash(const byte *indata, dword inlen, byte *ou
 namespace hash::internal {
 
     sycl::buffer<qword, 1> get_buf_ivs() {
-        sycl::buffer<qword, 1> buf {GLOBAL_BLAKE2B_IVS, sycl::range<1>(8)};
+        sycl::buffer<qword, 1> buf{GLOBAL_BLAKE2B_IVS, sycl::range<1>(8)};
         buf.set_final_data(nullptr);
         buf.set_write_back(false);
         return buf;
     }
 
     sycl::buffer<byte, 2> get_buf_sigmas() {
-        sycl::buffer<byte, 2> buf {(const byte *) GLOBAL_BLAKE2B_SIGMAS, sycl::range<2>(12, 16)};
+        sycl::buffer<byte, 2> buf{(const byte *) GLOBAL_BLAKE2B_SIGMAS, sycl::range<2>(12, 16)};
         buf.set_final_data(nullptr);
         buf.set_write_back(false);
         return buf;

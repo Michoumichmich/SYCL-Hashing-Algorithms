@@ -13,6 +13,7 @@ using byte = uint8_t;
 using dword = uint32_t;
 using qword = uint64_t;
 
+//#define IMPLICIT_MEMORY_COPY 1 // ONLY ON LINUX AND MACOS
 
 namespace hash {
     /**

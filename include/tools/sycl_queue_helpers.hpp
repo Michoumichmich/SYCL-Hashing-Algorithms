@@ -76,8 +76,41 @@ inline sycl::queue try_get_queue(const T &selector) {
     return q;
 }
 
+#ifdef IMPLICIT_MEMORY_COPY
+
+#include <sys/mman.h>
+#include <unistd.h>
+
+/**
+ * Checks whether a pointer was allocated on the host device
+ * @see http://si-head.nl/articles/msync
+ * @tparam T
+ * @param p
+ * @return
+ */
+template<typename T>
+inline bool valid_pointer(T *p) {
+    // Get page size and calculate page mask
+    size_t pagesz = sysconf(_SC_PAGESIZE);
+    size_t pagemask = ~(pagesz - 1);
+    // Calculate base address
+    void *base = (void *) (((size_t) p) & pagemask);
+    return msync(base, sizeof(T), MS_ASYNC) == 0;
+}
+
+#endif
+
+
 template<typename T, bool debug = false>
 inline bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
+#ifndef IMPLICIT_MEMORY_COPY
+    (T *) ptr;
+    return false; // If we're not doing implicit memory copies, this test should always fail
+#else
+    if (q.get_device().is_host()) {
+        return valid_pointer(ptr);
+    }
+
     try {
         sycl::get_pointer_device(ptr, q.get_context());
         sycl::usm::alloc alloc_type = sycl::get_pointer_type(ptr, q.get_context());
@@ -98,10 +131,9 @@ inline bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
                     break;
             }
         }
-        return alloc_type == sycl::usm::alloc::shared // Shared memory is cool
-               || alloc_type == sycl::usm::alloc::device // Device memory is perfect
-               || (q.get_device().is_host() && alloc_type != sycl::usm::alloc::unknown) // If we're on the host, anything known is OK.
-            // || (q.get_device().is_cpu() && alloc_type != sycl::usm::alloc::unknown) // ???? is accessing host mem from CPU fine ?
+        return alloc_type == sycl::usm::alloc::shared // Shared memory is ok
+               || alloc_type == sycl::usm::alloc::device // Device memory is ok
+               || (alloc_type == sycl::usm::alloc::host && q.get_device().is_cpu()) // We discard host allocated memory because of poor performance unless on the CPU
                 ;
     } catch (...) {
         if constexpr (debug) {
@@ -109,6 +141,7 @@ inline bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
         }
         return false;
     }
+#endif
 }
 
 
