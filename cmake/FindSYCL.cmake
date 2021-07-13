@@ -51,7 +51,7 @@ endif ()
 # We expect the DPCPP compiler to have used
 if (NOT A_SYCL_FOUND)
     function(add_sycl_to_target arg1 arg2)
-        target_compile_options(${arg2} PRIVATE ${DPCPP_FLAGS} -sycl-std=2020 -std=c++20 -fsycl-unnamed-lambda)
+        target_compile_options(${arg2} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${DPCPP_FLAGS} -sycl-std=2020 -std=c++20 -fsycl-unnamed-lambda>)
         target_link_options(${arg2} PRIVATE ${DPCPP_FLAGS} -sycl-std=2020 -std=c++20 -fsycl-unnamed-lambda)
     endfunction()
 
