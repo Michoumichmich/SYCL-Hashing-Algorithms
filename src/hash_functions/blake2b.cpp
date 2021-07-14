@@ -203,7 +203,7 @@ namespace hash::internal {
 
 
     usm_shared_ptr<blake2b_ctx, alloc::device> get_blake2b_ctx(sycl::queue &q, const byte *key, dword keylen, dword n_outbit) {
-        auto ctxt_device = make_shared_ptr<blake2b_ctx, alloc::device>(1, q);
+        auto ctxt_device = usm_shared_ptr<blake2b_ctx, alloc::device>(1, q);
         blake2b_ctx ctx;
         blake2b_init(&ctx, key, keylen, n_outbit);
         q.memcpy(ctxt_device.raw(), &ctx, sizeof(ctx)).wait();

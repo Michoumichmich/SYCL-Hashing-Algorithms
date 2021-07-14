@@ -201,11 +201,11 @@ namespace hash {
 #endif
             auto[q, in_ptr, out_ptr, batch_size, inlen] = std::move(q_work);
 #ifdef USING_COMPUTECPP
-            auto device_indata = hash::make_unique_ptr<byte, hash::alloc::device>(inlen * batch_size + (inlen ? 0 : 1), q); // TODO ComputeCpp runtime throws error when ptr size is 0
+            auto device_indata = hash::usm_unique_ptr<byte, hash::alloc::device>(inlen * batch_size + (inlen ? 0 : 1), q); // TODO ComputeCpp runtime throws error when ptr size is 0
 #else
-            auto device_indata = hash::make_unique_ptr<byte, hash::alloc::device>(inlen * batch_size, q);
+            auto device_indata = hash::usm_unique_ptr<byte, hash::alloc::device>(inlen * batch_size, q);
 #endif
-            auto device_outdata = hash::make_unique_ptr<byte, hash::alloc::device>(hash::get_block_size<M, n_outbit>() * batch_size, q);
+            auto device_outdata = hash::usm_unique_ptr<byte, hash::alloc::device>(hash::get_block_size<M, n_outbit>() * batch_size, q);
             sycl::event memcpy_in_e = inlen ? q.memcpy(device_indata.raw(), in_ptr, inlen * batch_size) : sycl::event{};
             sycl::event submission_e = hash::internal::dispatch_hash<M, n_outbit>(q, memcpy_in_e, device_indata.get(), device_outdata.get(), inlen, batch_size, key, keylen, bufs...);
             sycl::event memcpy_out_e = memcpy_with_dependency(q, out_ptr, device_outdata.raw(), hash::get_block_size<M, n_outbit>() * batch_size, submission_e);

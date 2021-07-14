@@ -85,9 +85,7 @@ namespace usm_smart_ptr {
 
         explicit usm_deleter(sycl::queue q) : q_(std::move(q)) {}
 
-        void operator()(T *ptr) const
-
-        noexcept {
+        void operator()(T *ptr) const noexcept {
             if (ptr)
                 sycl::free(ptr, q_);
         }
@@ -102,8 +100,12 @@ namespace usm_smart_ptr {
     private:
         size_t count_;
     public:
-        usm_unique_ptr(T *ptr, usm_deleter<T> deleter, size_t count)
-                : std::unique_ptr<T, usm_deleter<T>>(ptr, deleter) { count_ = count; }
+        usm_unique_ptr(size_t count, sycl::queue q)
+                : std::unique_ptr<T, usm_deleter<T>>(sycl::malloc<T>(count, q, location), usm_deleter<T>{q}) { count_ = count; }
+
+        usm_unique_ptr(sycl::queue q) :
+                usm_unique_ptr(1, q) { count_ = 1; }
+
 
         [[nodiscard]] inline size_t alloc_size() const noexcept { return count_ * sizeof(T); }
 
@@ -119,33 +121,6 @@ namespace usm_smart_ptr {
 
     };
 
-/**
- * Builds a usm_unique_ptr pointer
- * @tparam location indicates where is the memory allocated (device, host, or shared)
- */
-    template<typename T, sycl::usm::alloc location>
-    usm_unique_ptr<T, location> make_unique_ptr(size_t count, sycl::queue &q) {
-        //return usm_unique_ptr<T>(sycl::usm_allocator < T, location > {q}.allocate(count), usm_deleter<T>{q}, count);
-        if constexpr(location == alloc::shared)
-            return usm_unique_ptr<T, location>(sycl::malloc_shared<T>(count, q), usm_deleter<T>{q}, count);
-        else if constexpr(location == alloc::host)
-            return usm_unique_ptr<T, location>(sycl::malloc_host<T>(count, q), usm_deleter<T>{q}, count);
-        else if constexpr(location == alloc::device)
-            return usm_unique_ptr<T, location>(sycl::malloc_device<T>(count, q), usm_deleter<T>{q}, count);
-        else static_assert(!std::is_same_v<T, T>, "Invalid template parameter.");
-    }
-
-
-    template<typename T, sycl::usm::alloc location>
-    usm_unique_ptr<T, location> make_unique_ptr(sycl::queue &q, T *ptr) {
-        return usm_unique_ptr<T, location>(ptr, usm_deleter<T>{q}, 1);
-    }
-
-    template<typename T, sycl::usm::alloc location>
-    usm_unique_ptr<T, location> make_unique_ptr(sycl::queue &q) {
-        return make_unique_ptr<T, location>(1, q);
-    }
-
 
 /**
  * Same interface as usm_unique_ptr
@@ -157,7 +132,10 @@ namespace usm_smart_ptr {
         size_t count_;
 
     public:
-        usm_shared_ptr(T *ptr, usm_deleter<T> deleter, size_t count) : std::shared_ptr<T>(ptr, deleter) { count_ = count; }
+        usm_shared_ptr(size_t count, sycl::queue q) : std::shared_ptr<T>(sycl::malloc<T>(count, q, location), usm_deleter<T>{q}) { count_ = count; }
+
+        usm_shared_ptr(sycl::queue q) :
+                usm_shared_ptr(1, q) { count_ = 1; }
 
         [[nodiscard]] inline size_t alloc_size() const noexcept { return count_ * sizeof(T); }
 
@@ -173,20 +151,4 @@ namespace usm_smart_ptr {
 
     };
 
-    template<typename T, sycl::usm::alloc location>
-    usm_shared_ptr<T, location> make_shared_ptr(size_t count, sycl::queue &q) {
-        //return usm_shared_ptr<T>(sycl::usm_allocator < T, location > {q}.allocate(count), usm_deleter<T>{q}, count);
-        if constexpr(location == alloc::shared)
-            return usm_shared_ptr<T, location>(sycl::malloc_shared<T>(count, q), usm_deleter<T>{q}, count);
-        else if constexpr(location == alloc::host)
-            return usm_shared_ptr<T, location>(sycl::malloc_host<T>(count, q), usm_deleter<T>{q}, count);
-        else if constexpr(location == alloc::device)
-            return usm_shared_ptr<T, location>(sycl::malloc_device<T>(count, q), usm_deleter<T>{q}, count);
-        else static_assert(!std::is_same_v<T, T>, "Invalid template parameter.");
-    }
-
-    template<typename T, sycl::usm::alloc location>
-    usm_shared_ptr<T, location> make_shared_ptr(sycl::queue &q) {
-        return make_shared_ptr<T, location>(1, q);
-    }
 }

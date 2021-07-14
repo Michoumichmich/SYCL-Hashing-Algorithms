@@ -15,10 +15,10 @@ void compare_two_devices(sycl::queue q1, sycl::queue q2, size_t input_block_size
     std::cout << "Comparing " << hash::get_name<M, args...>() << " on: " << q1.get_device().get_info<sycl::info::device::name>() << " and: " << q2.get_device().get_info<sycl::info::device::name>()
               << "   ...";
     size_t out_block_size = hash::get_block_size<M, args...>();
-    auto input_data1 = make_unique_ptr<byte, alloc::shared>(input_block_size * n_blocs, q1);
-    auto output_hashes1 = make_unique_ptr<byte, alloc::shared>(out_block_size * n_blocs, q1);
-    auto input_data2 = make_unique_ptr<byte, alloc::shared>(input_block_size * n_blocs, q2);
-    auto output_hashes2 = make_unique_ptr<byte, alloc::shared>(out_block_size * n_blocs, q2);
+    auto input_data1 = usm_unique_ptr<byte, alloc::shared>(input_block_size * n_blocs, q1);
+    auto output_hashes1 = usm_unique_ptr<byte, alloc::shared>(out_block_size * n_blocs, q1);
+    auto input_data2 = usm_unique_ptr<byte, alloc::shared>(input_block_size * n_blocs, q2);
+    auto output_hashes2 = usm_unique_ptr<byte, alloc::shared>(out_block_size * n_blocs, q2);
 
     fill_rand<byte>(input_data1.get(), input_data1.alloc_count());
     memcpy(input_data2.raw(), input_data1.raw(), input_data1.alloc_size());
@@ -45,8 +45,8 @@ void compare_two_devices(sycl::queue q1, sycl::queue q2, size_t input_block_size
 
 template<hash::method M, int ... args>
 double benchmark_one_queue(sycl::queue q, size_t input_block_size, size_t n_blocs, size_t n_iters = 1) {
-    auto all_input_data = make_unique_ptr<byte, alloc::shared>(input_block_size * n_blocs, q);
-    auto all_output_hashes = make_unique_ptr<byte, alloc::shared>(hash::get_block_size<M, args...>() * n_blocs, q);
+    auto all_input_data = usm_unique_ptr<byte, alloc::shared>(input_block_size * n_blocs, q);
+    auto all_output_hashes = usm_unique_ptr<byte, alloc::shared>(hash::get_block_size<M, args...>() * n_blocs, q);
     if constexpr (M == hash::method::blake2b) {
         byte key[64];
         std::memset(key, 1, 64);
