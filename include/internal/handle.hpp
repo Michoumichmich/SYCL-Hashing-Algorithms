@@ -71,11 +71,23 @@ namespace hash {
 
         /**
          * We need to join all the SYCL kernels/events before freeing the memory they use.
-         * As the user should've waited on this handle, we can assume the potential exceptions were already thrown,
-         * so we can throw anway.
          */
-        ~handle() {
-            this->wait_and_throw();
+        ~handle() noexcept {
+            if (!items_.empty()) {
+                std::cerr << "Destroying handled that still holds data. Did you forget to call .wait()?\n";
+                for (auto &e:items_) {
+                    try {
+                        e.dev_e_.wait_and_throw();
+                    }
+                    catch (sycl::exception const &e) {
+                        std::cerr << "Caught asynchronous SYCL exception at handle destruction: " << e.what() << std::endl;
+                    }
+                    catch (std::exception const &e) {
+                        std::cerr << "Caught asynchronous STL exception at handle destruction: " << e.what() << std::endl;
+                    }
+                }
+                items_.clear();
+            }
         }
     };
 }

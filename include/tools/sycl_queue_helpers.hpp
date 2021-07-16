@@ -106,6 +106,8 @@ inline bool is_ptr_usable([[maybe_unused]] const T *ptr, [[maybe_unused]] const 
 #ifndef IMPLICIT_MEMORY_COPY
     return false; // If we're not doing implicit memory copies, this test should always fail
 #else
+
+    std::cout << "Here" << std::endl;
     if (q.get_device().is_host()) {
         return valid_pointer(ptr);
     }
