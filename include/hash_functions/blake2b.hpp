@@ -11,15 +11,15 @@ constexpr dword BLAKE2B_STATE_SIZE = 16;
 constexpr dword BLAKE2B_STATE_LENGTH = (BLAKE2B_STATE_SIZE * sizeof(qword));
 
 struct blake2b_ctx {
-    int64_t digestlen;
-    dword keylen;
-    dword pos;
-    qword t0;
-    qword t1;
-    qword f0;
-    byte buff[BLAKE2B_BLOCK_LENGTH];
-    qword chain[BLAKE2B_CHAIN_SIZE];
-    qword state[BLAKE2B_STATE_SIZE];
+    int64_t digestlen{};
+    dword keylen{};
+    dword pos{};
+    qword t0{};
+    qword t1{};
+    qword f0{};
+    byte buff[BLAKE2B_BLOCK_LENGTH] = {0};
+    qword chain[BLAKE2B_CHAIN_SIZE] = {0};
+    qword state[BLAKE2B_STATE_SIZE] = {0};
 };
 
 namespace hash::internal {

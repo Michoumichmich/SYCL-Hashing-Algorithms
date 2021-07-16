@@ -8,10 +8,10 @@ using namespace usm_smart_ptr;
 using namespace hash;
 
 struct md2_ctx {
-    int len;
-    byte data[16];
-    byte state[48];
-    byte checksum[16];
+    int len = 0;
+    byte data[16] = {0};
+    byte state[48] = {0};
+    byte checksum[16] = {0};
 };
 
 /**************************** VARIABLES *****************************/
@@ -45,8 +45,8 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data, const constant_
 
     t = 0;
     for (dword j = 0; j < 18; ++j) {
-        for (dword k = 0; k < 48; ++k) {
-            t = ctx->state[k] ^= consts[t];
+        for (unsigned char &k : ctx->state) {
+            t = k ^= consts[t];
         }
         t = (t + j) & 0xFF;
     }
@@ -55,10 +55,6 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data, const constant_
     for (int j = 0; j < 16; ++j) {
         t = ctx->checksum[j] ^= consts[data[j] ^ t];
     }
-}
-
-static inline void md2_init(md2_ctx *ctx) {
-    memset(ctx, 0, sizeof(*ctx));
 }
 
 static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len, const constant_accessor<byte, 1> &consts) {
@@ -73,7 +69,7 @@ static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len, const 
 }
 
 static inline void md2_final(md2_ctx *ctx, byte *hash, const constant_accessor<byte, 1> &consts) {
-    long int to_pad = MD2_BLOCK_SIZE - ctx->len;
+    int to_pad = (int) MD2_BLOCK_SIZE - ctx->len;
     if (to_pad > 0)memset(ctx->data + ctx->len, (byte) to_pad, (dword) to_pad);
     md2_transform(ctx, ctx->data, consts);
     md2_transform(ctx, ctx->checksum, consts);
@@ -86,8 +82,7 @@ static inline void kernel_md2_hash(byte *indata, dword inlen, byte *outdata, dwo
     }
     byte *in = indata + thread * inlen;
     byte *out = outdata + thread * MD2_BLOCK_SIZE;
-    md2_ctx ctx;
-    md2_init(&ctx);
+    md2_ctx ctx{};
     md2_update(&ctx, in, inlen, consts);
     md2_final(&ctx, out, consts);
 }

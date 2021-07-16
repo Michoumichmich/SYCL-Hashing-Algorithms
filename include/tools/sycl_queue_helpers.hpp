@@ -102,9 +102,8 @@ inline bool valid_pointer(T *p) {
 
 
 template<typename T, bool debug = false>
-inline bool is_ptr_usable(const T *ptr, const sycl::queue &q) {
+inline bool is_ptr_usable([[maybe_unused]] const T *ptr, [[maybe_unused]] const sycl::queue &q) {
 #ifndef IMPLICIT_MEMORY_COPY
-    (T *) ptr;
     return false; // If we're not doing implicit memory copies, this test should always fail
 #else
     if (q.get_device().is_host()) {

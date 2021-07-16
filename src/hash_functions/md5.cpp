@@ -6,11 +6,17 @@
 using namespace usm_smart_ptr;
 
 struct md5_ctx {
-    qword bitlen;
-    dword datalen;
-    byte data[64];
-    dword state[4];
+    qword bitlen = 0;
+    dword datalen = 0;
+    byte data[64] = {0};
+    dword state[4]{};
 
+    md5_ctx() {
+        state[0] = 0x67452301;
+        state[1] = 0xEFCDAB89;
+        state[2] = 0x98BADCFE;
+        state[3] = 0x10325476;
+    }
 };
 
 
@@ -122,14 +128,6 @@ static inline void md5_transform(md5_ctx *ctx, const byte *data) {
     ctx->state[3] += d;
 }
 
-static inline void md5_init(md5_ctx *ctx) {
-    ctx->datalen = 0;
-    ctx->bitlen = 0;
-    ctx->state[0] = 0x67452301;
-    ctx->state[1] = 0xEFCDAB89;
-    ctx->state[2] = 0x98BADCFE;
-    ctx->state[3] = 0x10325476;
-}
 
 static inline void md5_update(md5_ctx *ctx, const byte *data, size_t len) {
     for (size_t i = 0; i < len; ++i) {
@@ -187,8 +185,7 @@ static inline void kernel_md5_hash(const byte *indata, dword inlen, byte *outdat
     }
     const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * MD5_BLOCK_SIZE;
-    md5_ctx ctx;
-    md5_init(&ctx);
+    md5_ctx ctx{};
     md5_update(&ctx, in, inlen);
     md5_final(&ctx, out);
 }

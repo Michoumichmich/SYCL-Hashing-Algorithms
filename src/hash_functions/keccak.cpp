@@ -2,6 +2,7 @@
 #include <internal/determine_kernel_config.hpp>
 
 #include <cstring>
+#include <utility>
 
 using namespace usm_smart_ptr;
 
@@ -16,9 +17,9 @@ static const qword GLOBAL_KECCAK_CONSTS[24] =
          0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
 
 struct keccak_ctx_t {
-    qword bits_in_queue;
-    qword state[KECCAK_STATE_SIZE];
-    byte q[KECCAK_Q_SIZE];
+    qword bits_in_queue = 0;
+    qword state[KECCAK_STATE_SIZE] = {0};
+    byte q[KECCAK_Q_SIZE] = {0};
 };
 
 static inline qword keccak_leuint64(const void *in) {
@@ -161,9 +162,9 @@ static inline void keccak_permutations(keccak_ctx_t *ctx, const constant_accesso
 }
 
 
-template<qword absorb_round>
+template<int absorb_round>
 static inline void keccak_absorb(keccak_ctx_t *ctx, const byte *in, const constant_accessor<qword, 1> &consts) {
-    for (qword offset = 0, i = 0; i < absorb_round; ++i) {
+    for (int offset = 0, i = 0; i < absorb_round; ++i) {
         ctx->state[i] ^= keccak_leuint64(in + offset);
         offset += 8;
     }
@@ -202,21 +203,6 @@ static inline void keccak_pad(keccak_ctx_t *ctx, const constant_accessor<qword, 
     keccak_permutations(ctx, consts);
     keccak_extract<rate_bits>(ctx);
     ctx->bits_in_queue = rate_bits;
-}
-
-/*
- * Digestbitlen must be 128 224 256 288 384 512
- */
-static inline void keccak_init(keccak_ctx_t *ctx) {
-    memset(ctx, 0, sizeof(keccak_ctx_t));
-    ctx->bits_in_queue = 0;
-}
-
-/*
- * Digestbitlen must be 224 256 384 512
- */
-static inline void keccak_sha3_init(keccak_ctx_t *ctx) {
-    keccak_init(ctx);
 }
 
 template<qword digest_bit_len>
@@ -287,8 +273,7 @@ static inline void kernel_keccak_hash(bool is_sha3, const byte *indata, dword in
     }
     const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * (digest_bit_len >> 3);
-    keccak_ctx_t ctx;
-    keccak_init(&ctx);
+    keccak_ctx_t ctx{};
     keccak_update<digest_bit_len>(&ctx, in, inlen, consts);
     keccak_final<digest_bit_len>(is_sha3, &ctx, out, consts);
 }
@@ -309,7 +294,7 @@ namespace hash::internal {
                                   sycl::buffer<qword, 1> &buf_keccak_consts) {
         auto config = get_kernel_sizes(item, n_batch);
         return item.submit([&](sycl::handler &cgh) {
-            cgh.depends_on(e);
+            cgh.depends_on(std::move(e));
             auto accessor = buf_keccak_consts.get_access<sycl::access::mode::read, sycl::access::target::constant_buffer>(cgh);
             cgh.parallel_for<keccak_kernel<n_outbit_>>(
                     sycl::nd_range<1>(sycl::range<1>(config.block) * sycl::range<1>(config.wg_size), sycl::range<1>(config.wg_size)),

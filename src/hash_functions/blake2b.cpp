@@ -28,7 +28,7 @@ static const byte GLOBAL_BLAKE2B_SIGMAS[12][16] =
 
 
 static inline void blake2b_init(blake2b_ctx *ctx, const byte *key, dword keylen, dword digestbitlen) {
-    memset(ctx, 0, sizeof(blake2b_ctx));
+    //memset(ctx, 0, sizeof(blake2b_ctx));
     memcpy(ctx->buff, key, keylen);
     ctx->keylen = keylen;
 
@@ -108,7 +108,7 @@ static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inof
         blake2b_G({ctx, m[sigmas[round][14]], m[sigmas[round][15]], 3, 4, 9, 14});
     }
 
-    for (int offset = 0; offset < BLAKE2B_CHAIN_SIZE; offset++)
+    for (dword offset = 0; offset < BLAKE2B_CHAIN_SIZE; offset++)
         ctx->chain[offset] = ctx->chain[offset] ^ ctx->state[offset] ^ ctx->state[offset + 8];
 }
 
@@ -144,8 +144,8 @@ static inline void blake2b_update(blake2b_ctx *ctx, const byte *in, qword inlen,
         blake2b_compress(ctx, in, in_index, ivs, sigmas);
     }
 
-    memcpy(ctx->buff, in + in_index, inlen - in_index);
-    ctx->pos += inlen - in_index;
+    memcpy(ctx->buff, in + in_index, inlen - (size_t) in_index);
+    ctx->pos += (inlen - (size_t) in_index);
 }
 
 static inline void blake2b_final(blake2b_ctx *ctx, byte *out, const constant_accessor<qword, 1> &ivs, const constant_accessor<byte, 2> &sigmas) {
@@ -204,7 +204,7 @@ namespace hash::internal {
 
     usm_shared_ptr<blake2b_ctx, alloc::device> get_blake2b_ctx(sycl::queue &q, const byte *key, dword keylen, dword n_outbit) {
         auto ctxt_device = usm_shared_ptr<blake2b_ctx, alloc::device>(1, q);
-        blake2b_ctx ctx;
+        blake2b_ctx ctx = {};
         blake2b_init(&ctx, key, keylen, n_outbit);
         q.memcpy(ctxt_device.raw(), &ctx, sizeof(ctx)).wait();
         return ctxt_device;
@@ -212,10 +212,10 @@ namespace hash::internal {
 
 
     sycl::event
-    launch_blake2b_kernel(sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit, const byte *key,
-                          dword keylen, sycl::buffer<qword, 1> &buf_ivs, sycl::buffer<byte, 2> &buf_sigmas, const device_accessible_ptr<blake2b_ctx> ctx) {
+    launch_blake2b_kernel(sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit, const byte *,
+                          dword, sycl::buffer<qword, 1> &buf_ivs, sycl::buffer<byte, 2> &buf_sigmas, const device_accessible_ptr<blake2b_ctx> ctx) {
         const dword block_size = n_outbit >> 3;
-        assert(keylen <= 128); // we must define keylen at host
+        //  assert(keylen <= 128); // we must define keylen at host
         auto config = get_kernel_sizes(item, n_batch);
         return item.submit([&](sycl::handler &cgh) {
             cgh.depends_on(e);

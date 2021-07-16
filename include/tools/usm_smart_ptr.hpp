@@ -49,7 +49,7 @@ namespace usm_smart_ptr {
     struct device_accessible_ptr {
         explicit device_accessible_ptr(T *p) : val_((T *) p) {};
 
-        explicit device_accessible_ptr(const T *p) : val_((T *) p) {};
+        explicit device_accessible_ptr(const T *p) : val_(p) {};
 
         device_accessible_ptr(usm_ptr<T, alloc::shared> p) : val_((T *) p) {};
 
@@ -103,7 +103,7 @@ namespace usm_smart_ptr {
         usm_unique_ptr(size_t count, sycl::queue q)
                 : std::unique_ptr<T, usm_deleter<T>>(sycl::malloc<T>(count, q, location), usm_deleter<T>{q}) { count_ = count; }
 
-        usm_unique_ptr(sycl::queue q) :
+        explicit usm_unique_ptr(sycl::queue q) :
                 usm_unique_ptr(1, q) { count_ = 1; }
 
 
@@ -134,7 +134,7 @@ namespace usm_smart_ptr {
     public:
         usm_shared_ptr(size_t count, sycl::queue q) : std::shared_ptr<T>(sycl::malloc<T>(count, q, location), usm_deleter<T>{q}) { count_ = count; }
 
-        usm_shared_ptr(sycl::queue q) :
+        explicit usm_shared_ptr(sycl::queue q) :
                 usm_shared_ptr(1, q) { count_ = 1; }
 
         [[nodiscard]] inline size_t alloc_size() const noexcept { return count_ * sizeof(T); }

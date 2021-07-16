@@ -6,11 +6,23 @@
 using namespace usm_smart_ptr;
 
 struct sha1_ctx {
-    byte data[64];
-    dword datalen;
-    qword bitlen;
-    dword state[5];
-    dword k[4];
+    byte data[64] = {0};
+    dword datalen = 0;
+    qword bitlen = 0;
+    dword state[5]{};
+    dword k[4]{};
+
+    sha1_ctx() {
+        state[0] = 0x67452301;
+        state[1] = 0xEFCDAB89;
+        state[2] = 0x98BADCFE;
+        state[3] = 0x10325476;
+        state[4] = 0xc3d2e1f0;
+        k[0] = 0x5a827999;
+        k[1] = 0x6ed9eba1;
+        k[2] = 0x8f1bbcdc;
+        k[3] = 0xca62c1d6;
+    }
 };
 
 /****************************** MACROS ******************************/
@@ -75,20 +87,6 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
     ctx->state[4] += e;
 }
 
-void sha1_init(sha1_ctx *ctx) {
-    ctx->datalen = 0;
-    ctx->bitlen = 0;
-    ctx->state[0] = 0x67452301;
-    ctx->state[1] = 0xEFCDAB89;
-    ctx->state[2] = 0x98BADCFE;
-    ctx->state[3] = 0x10325476;
-    ctx->state[4] = 0xc3d2e1f0;
-    ctx->k[0] = 0x5a827999;
-    ctx->k[1] = 0x6ed9eba1;
-    ctx->k[2] = 0x8f1bbcdc;
-    ctx->k[3] = 0xca62c1d6;
-}
-
 void sha1_update(sha1_ctx *ctx, const byte *data, size_t len) {
     for (size_t i = 0; i < len; ++i) {
         ctx->data[ctx->datalen] = data[i];
@@ -146,8 +144,7 @@ void kernel_sha1_hash(const byte *indata, dword inlen, byte *outdata, dword n_ba
     }
     const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * SHA1_BLOCK_SIZE;
-    sha1_ctx ctx;
-    sha1_init(&ctx);
+    sha1_ctx ctx{};
     sha1_update(&ctx, in, inlen);
     sha1_final(&ctx, out);
 }

@@ -72,6 +72,7 @@ namespace hash {
     }
 
 #ifndef IMPLICIT_MEMORY_COPY
+
     /**
      * Computes synchronously a hash.
      * This overload does not perform any memory operation. We assume memory is accessible in read and write by the

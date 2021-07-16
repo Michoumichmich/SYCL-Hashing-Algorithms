@@ -7,10 +7,21 @@ using namespace usm_smart_ptr;
 
 /**************************** DATA TYPES ****************************/
 struct sha256_ctx {
-    byte data[64];
-    qword bitlen;
-    dword datalen;
-    dword state[8];
+    byte data[64] = {};
+    qword bitlen = 0;
+    dword datalen = 0;
+    dword state[8]{};
+
+    sha256_ctx() {
+        state[0] = 0x6a09e667;
+        state[1] = 0xbb67ae85;
+        state[2] = 0x3c6ef372;
+        state[3] = 0xa54ff53a;
+        state[4] = 0x510e527f;
+        state[5] = 0x9b05688c;
+        state[6] = 0x1f83d9ab;
+        state[7] = 0x5be0cd19;
+    }
 };
 
 /****************************** MACROS ******************************/
@@ -84,18 +95,6 @@ static void sha256_transform(sha256_ctx *ctx, const byte *data, const constant_a
     ctx->state[7] += h;
 }
 
-static void sha256_init(sha256_ctx *__restrict__ ctx) {
-    ctx->datalen = 0;
-    ctx->bitlen = 0;
-    ctx->state[0] = 0x6a09e667;
-    ctx->state[1] = 0xbb67ae85;
-    ctx->state[2] = 0x3c6ef372;
-    ctx->state[3] = 0xa54ff53a;
-    ctx->state[4] = 0x510e527f;
-    ctx->state[5] = 0x9b05688c;
-    ctx->state[6] = 0x1f83d9ab;
-    ctx->state[7] = 0x5be0cd19;
-}
 
 static void sha256_update(sha256_ctx *ctx, const byte *data, size_t len, const constant_accessor<dword, 1> &consts) {
     for (dword i = 0; i < len; ++i) {
@@ -159,8 +158,7 @@ static void kernel_sha256_hash(const byte *indata, dword inlen, byte *outdata, d
     }
     const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * SHA256_BLOCK_SIZE;
-    sha256_ctx ctx;
-    sha256_init(&ctx);
+    sha256_ctx ctx{};
     sha256_update(&ctx, in, inlen, consts);
     sha256_final(&ctx, out, consts);
 }
