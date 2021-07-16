@@ -91,7 +91,7 @@ inline sycl::queue try_get_queue(const T &selector) {
 template<typename T>
 inline bool valid_pointer(T *p) {
     // Get page size and calculate page mask
-    size_t pagesz = sysconf(_SC_PAGESIZE);
+    auto pagesz = (size_t) sysconf(_SC_PAGESIZE);
     size_t pagemask = ~(pagesz - 1);
     // Calculate base address
     void *base = (void *) (((size_t) p) & pagemask);

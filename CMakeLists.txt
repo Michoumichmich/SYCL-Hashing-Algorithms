@@ -2,16 +2,16 @@ cmake_minimum_required(VERSION 3.9)
 project(SYCL_HASH LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-option(USE_IMPLICIT_MEMCPY "EXPERIMENTAL: The runtime will try to detect whether your memory was allocated on the device and move memory accordingly. Require msync hack." OFF)
-if (USE_IMPLICIY_MEMCPY)
+option(USE_IMPLICIT_MEMCPY "EXPERIMENTAL: The runtime will try to detect whether your memory was allocated on the device and move memory accordingly. Require msync hack." ON)
+if (USE_IMPLICIT_MEMCPY)
     message(WARNING "Using experimental implicit memory copy. The SYCL spec is unclear on the host device behaviour. Behaviour can be implementation defined.")
-    add_definitions(-DIMPLICIT_MEMORY_COPY)
+    add_compile_definitions(IMPLICIT_MEMORY_COPY)
 endif ()
 
-option(VERBOSE_LIB "Adds various prints in the code" OFF)
+option(VERBOSE_LIB "Adds various prints in the code" ON)
 if (VERBOSE_LIB)
     message(WARNING "Verbose mode on. Did you forget it?")
-    add_definitions(-DVERBOSE_HASH_LIB)
+    add_compile_definitions(VERBOSE_HASH_LIB)
 endif ()
 
 

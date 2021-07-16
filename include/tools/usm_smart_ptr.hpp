@@ -20,9 +20,10 @@ namespace usm_smart_ptr {
     using namespace sycl::usm;
 
     template<class T, sycl::usm::alloc Tag>
-    /* template <sycl::usm::alloc location>
-    concept host_accessible = location == sycl::usm::alloc::host || location == sycl::usm::alloc::shared; */
     struct usm_ptr {
+    private:
+        T *val_;
+    public:
         explicit usm_ptr(T *t) : val_(t) {}
 
         /**
@@ -40,14 +41,15 @@ namespace usm_smart_ptr {
 #endif
         //explicit(Tag != sycl::usm::alloc::shared) operator T *() const noexcept { return val_; }
 
-    private:
-        T *val_;
     };
 
 
     template<typename T>
     struct device_accessible_ptr {
-        explicit device_accessible_ptr(T *p) : val_((T *) p) {};
+    private:
+        const T *val_;
+    public:
+        explicit device_accessible_ptr(T *p) : val_(p) {};
 
         explicit device_accessible_ptr(const T *p) : val_(p) {};
 
@@ -55,23 +57,23 @@ namespace usm_smart_ptr {
 
         device_accessible_ptr(usm_ptr<T, alloc::device> p) : val_((T *) p) {};
 
-        //device_accessible_ptr(usm_ptr<T, alloc::host> p): val_((T*)p){};
-        operator T *() const noexcept { return val_; }
+        operator T *() const noexcept { return (T *) val_; }
 
-    private:
-        T *val_;
+
     };
 
     template<typename T>
     struct host_accessible_ptr {
+    private:
+        T *val_;
+    public:
         host_accessible_ptr(usm_ptr<T, alloc::shared> p) : val_((T *) p) {};
 
         host_accessible_ptr(usm_ptr<T, alloc::host> p) : val_((T *) p) {};
 
         operator T *() const noexcept { return val_; }
 
-    private:
-        T *val_;
+
     };
 
 
@@ -83,7 +85,7 @@ namespace usm_smart_ptr {
     struct usm_deleter {
         sycl::queue q_;
 
-        explicit usm_deleter(sycl::queue q) : q_(std::move(q)) {}
+        explicit usm_deleter(const sycl::queue &q) : q_(q) {}
 
         void operator()(T *ptr) const noexcept {
             if (ptr)
