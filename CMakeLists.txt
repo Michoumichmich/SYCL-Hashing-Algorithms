@@ -8,15 +8,14 @@ if (USE_IMPLICIT_MEMCPY)
     add_compile_definitions(IMPLICIT_MEMORY_COPY)
 endif ()
 
-option(VERBOSE_LIB "Adds various prints in the code" ON)
+option(VERBOSE_LIB "Adds various prints in the code" OFF)
 if (VERBOSE_LIB)
     message(WARNING "Verbose mode on. Did you forget it?")
     add_compile_definitions(VERBOSE_HASH_LIB)
 endif ()
 
-
 # If you're using the DPCPP compiler, these flags will be used. Set here the devies you want to target
-set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64,nvptx64-nvidia-cuda -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75 -v)
+set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64,nvptx64-nvidia-cuda--sm_75)
 include(cmake/FindSYCL.cmake)
 
 # Default C++ Flags for warnings and optimisation
@@ -68,6 +67,7 @@ set(sycl_hash_all_sources
 
 add_library(sycl_hash ${sycl_hash_all_sources} ${sycl_hash_all_kernels})
 add_sycl_to_target(TARGET sycl_hash SOURCES ${sycl_hash_all_kernels})
+
 
 add_executable(demo demo_main.cpp src/benchmarks/misc.hpp)
 target_link_libraries(demo PUBLIC sycl_hash)

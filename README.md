@@ -88,7 +88,7 @@ int main(){
 And, for clang build with
 
 ```
--fsycl -fsycl-unnamed-lambda -fsycl-targets=nvptx64-cuda-nvidia-sycldevice -I<include_dir> <build_dir>/libsycl_hash.a
+-fsycl -fsycl-targets=spir64_x86_64,nvptx64-nvidia-cuda--sm_50 -I<include_dir> <build_dir>/libsycl_hash.a
 ```
 
 And your hash will run on the GPU.
