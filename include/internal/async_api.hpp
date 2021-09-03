@@ -37,36 +37,6 @@ namespace hash {
 
 
     /**
-     * SHA 256 Specialization for the buffer management.
-     */
-    template<>
-    class hasher<method::sha256> {
-
-    private:
-        runners runners_;
-        std::vector<sycl::buffer<dword, 1> > buffers_;
-    public:
-        explicit hasher(const runners &v) : runners_(v) {
-            size_t size = v.size();
-            buffers_.reserve(size);
-            for (size_t i = 0; i < size; ++i) {
-                buffers_.emplace_back(internal::get_sha256_buffer());
-            }
-        }
-
-        handle hash(const byte *indata, dword inlen, byte *outdata, dword n_batch) {
-            size_t size = runners_.size();
-            std::vector<handle_item> handles;
-            handles.reserve(size);
-            auto items = hash::internal::get_hash_queue_work_item<method::sha256, 0>(runners_, indata, inlen, outdata, n_batch);
-            for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_with_data_copy<method::sha256, 0, sycl::buffer<dword, 1> >(items[i], nullptr, 0, buffers_[i]));
-            }
-            return handle(std::move(handles));
-        }
-    };
-
-    /**
      * KECCAK spec
      */
     template<int n_outbit>

@@ -11,11 +11,8 @@ namespace hash::internal {
 
     using namespace usm_smart_ptr;
 
-    sycl::buffer<dword, 1> get_sha256_buffer();
 
     sycl::event launch_sha256_kernel(sycl::queue &q, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch);
 
-    sycl::event
-    launch_sha256_kernel(sycl::queue &q, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, sycl::buffer<dword, 1> &buffer);
 
 }

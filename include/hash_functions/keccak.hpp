@@ -11,8 +11,7 @@ constexpr dword KECCAK_Q_SIZE = 192;
 namespace hash::internal {
 
     template<dword n_outbit>
-    class keccak_kernel {
-    };
+    class keccak_kernel;
 
     using namespace usm_smart_ptr;
 
