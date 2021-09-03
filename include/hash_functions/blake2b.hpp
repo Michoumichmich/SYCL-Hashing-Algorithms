@@ -29,9 +29,6 @@ namespace hash::internal {
 
     usm_shared_ptr<blake2b_ctx, alloc::device> get_blake2b_ctx(sycl::queue &q, const byte *key, dword keylen, dword n_outbit);
 
-    sycl::buffer<qword, 1> get_buf_ivs();
-
-    sycl::buffer<byte, 2> get_buf_sigmas();
 
     sycl::event
     launch_blake2b_kernel(sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit, const byte *key,
@@ -39,6 +36,6 @@ namespace hash::internal {
 
     sycl::event
     launch_blake2b_kernel(sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit, const byte *key,
-                          dword keylen, sycl::buffer<qword, 1> &buf_ivs, sycl::buffer<byte, 2> &buf_sigmas, device_accessible_ptr<blake2b_ctx>);
+                          dword keylen, device_accessible_ptr<blake2b_ctx>);
 
 }

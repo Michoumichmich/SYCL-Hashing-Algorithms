@@ -12,20 +12,6 @@ static const qword GLOBAL_BLAKE2B_IVS[8]
            0xa54ff53a5f1d36f1, 0x510e527fade682d1, 0x9b05688c2b3e6c1f,
            0x1f83d9abfb41bd6b, 0x5be0cd19137e2179};
 
-static const byte GLOBAL_BLAKE2B_SIGMAS[12][16] =
-        {{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15},
-         {14, 10, 4,  8,  9,  15, 13, 6,  1,  12, 0,  2,  11, 7,  5,  3},
-         {11, 8,  12, 0,  5,  2,  15, 13, 10, 14, 3,  6,  7,  1,  9,  4},
-         {7,  9,  3,  1,  13, 12, 11, 14, 2,  6,  5,  10, 4,  0,  15, 8},
-         {9,  0,  5,  7,  2,  4,  10, 15, 14, 1,  11, 12, 6,  8,  3,  13},
-         {2,  12, 6,  10, 0,  11, 8,  3,  4,  13, 7,  5,  15, 14, 1,  9},
-         {12, 5,  1,  15, 14, 13, 4,  10, 0,  7,  6,  3,  9,  2,  8,  11},
-         {13, 11, 7,  14, 12, 1,  3,  9,  5,  0,  15, 4,  8,  6,  2,  10},
-         {6,  15, 14, 9,  11, 3,  0,  8,  12, 2,  13, 7,  1,  4,  10, 5},
-         {10, 2,  8,  4,  7,  6,  1,  5,  15, 11, 9,  14, 3,  12, 13, 0},
-         {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15},
-         {14, 10, 4,  8,  9,  15, 13, 6,  1,  12, 0,  2,  11, 7,  5,  3}};
-
 
 static inline void blake2b_init(blake2b_ctx *ctx, const byte *key, dword keylen, dword digestbitlen) {
     //memset(ctx, 0, sizeof(blake2b_ctx));
@@ -79,7 +65,12 @@ static inline void blake2b_G(blake2b_G_arg arg) {
     state[arg.b] = blake2b_ROTR64(state[arg.b] ^ state[arg.c], 63);
 }
 
-static inline void blake2b_init_state(blake2b_ctx *ctx, const constant_accessor<qword, 1> &ivs) {
+static inline void blake2b_init_state(blake2b_ctx *ctx) {
+    static const qword ivs[8]
+            = {0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b,
+               0xa54ff53a5f1d36f1, 0x510e527fade682d1, 0x9b05688c2b3e6c1f,
+               0x1f83d9abfb41bd6b, 0x5be0cd19137e2179};
+
     memcpy(ctx->state, ctx->chain, BLAKE2B_CHAIN_LENGTH);
 #pragma unroll
     for (dword i = 0; i < 4; i++) {
@@ -92,8 +83,22 @@ static inline void blake2b_init_state(blake2b_ctx *ctx, const constant_accessor<
     ctx->state[15] = ivs[7];
 }
 
-static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inoffset, const constant_accessor<qword, 1> &ivs, const constant_accessor<byte, 2> &sigmas) {
-    blake2b_init_state(ctx, ivs);
+static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inoffset) {
+    blake2b_init_state(ctx);
+
+    static const byte sigmas[12][16] =
+            {{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15},
+             {14, 10, 4,  8,  9,  15, 13, 6,  1,  12, 0,  2,  11, 7,  5,  3},
+             {11, 8,  12, 0,  5,  2,  15, 13, 10, 14, 3,  6,  7,  1,  9,  4},
+             {7,  9,  3,  1,  13, 12, 11, 14, 2,  6,  5,  10, 4,  0,  15, 8},
+             {9,  0,  5,  7,  2,  4,  10, 15, 14, 1,  11, 12, 6,  8,  3,  13},
+             {2,  12, 6,  10, 0,  11, 8,  3,  4,  13, 7,  5,  15, 14, 1,  9},
+             {12, 5,  1,  15, 14, 13, 4,  10, 0,  7,  6,  3,  9,  2,  8,  11},
+             {13, 11, 7,  14, 12, 1,  3,  9,  5,  0,  15, 4,  8,  6,  2,  10},
+             {6,  15, 14, 9,  11, 3,  0,  8,  12, 2,  13, 7,  1,  4,  10, 5},
+             {10, 2,  8,  4,  7,  6,  1,  5,  15, 11, 9,  14, 3,  12, 13, 0},
+             {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15},
+             {14, 10, 4,  8,  9,  15, 13, 6,  1,  12, 0,  2,  11, 7,  5,  3}};
 
     qword m[16];
 #pragma unroll
@@ -101,16 +106,16 @@ static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inof
         m[j] = blake2b_leuint64(in + inoffset + (j << 3));
     }
 
-
-    for (dword round = 0; round < BLAKE2B_ROUNDS; round++) {
-        blake2b_G({ctx, m[sigmas[round][0]], m[sigmas[round][1]], 0, 4, 8, 12});
-        blake2b_G({ctx, m[sigmas[round][2]], m[sigmas[round][3]], 1, 5, 9, 13});
-        blake2b_G({ctx, m[sigmas[round][4]], m[sigmas[round][5]], 2, 6, 10, 14});
-        blake2b_G({ctx, m[sigmas[round][6]], m[sigmas[round][7]], 3, 7, 11, 15});
-        blake2b_G({ctx, m[sigmas[round][8]], m[sigmas[round][9]], 0, 5, 10, 15});
-        blake2b_G({ctx, m[sigmas[round][10]], m[sigmas[round][11]], 1, 6, 11, 12});
-        blake2b_G({ctx, m[sigmas[round][12]], m[sigmas[round][13]], 2, 7, 8, 13});
-        blake2b_G({ctx, m[sigmas[round][14]], m[sigmas[round][15]], 3, 4, 9, 14});
+#pragma unroll
+    for (auto sigma: sigmas) {
+        blake2b_G({ctx, m[sigma[0]], m[sigma[1]], 0, 4, 8, 12});
+        blake2b_G({ctx, m[sigma[2]], m[sigma[3]], 1, 5, 9, 13});
+        blake2b_G({ctx, m[sigma[4]], m[sigma[5]], 2, 6, 10, 14});
+        blake2b_G({ctx, m[sigma[6]], m[sigma[7]], 3, 7, 11, 15});
+        blake2b_G({ctx, m[sigma[8]], m[sigma[9]], 0, 5, 10, 15});
+        blake2b_G({ctx, m[sigma[10]], m[sigma[11]], 1, 6, 11, 12});
+        blake2b_G({ctx, m[sigma[12]], m[sigma[13]], 2, 7, 8, 13});
+        blake2b_G({ctx, m[sigma[14]], m[sigma[15]], 3, 4, 9, 14});
     }
 
 #pragma unroll
@@ -118,7 +123,7 @@ static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inof
         ctx->chain[offset] = ctx->chain[offset] ^ ctx->state[offset] ^ ctx->state[offset + 8];
 }
 
-static inline void blake2b_update(blake2b_ctx *ctx, const byte *in, qword inlen, const constant_accessor<qword, 1> &ivs, const constant_accessor<byte, 2> &sigmas) {
+static inline void blake2b_update(blake2b_ctx *ctx, const byte *in, qword inlen) {
     if (inlen == 0)
         return;
 
@@ -131,7 +136,7 @@ static inline void blake2b_update(blake2b_ctx *ctx, const byte *in, qword inlen,
             memcpy(ctx->buff + ctx->pos, in, start);
             ctx->t0 += BLAKE2B_BLOCK_LENGTH;
             if (ctx->t0 == 0) ctx->t1++;
-            blake2b_compress(ctx, ctx->buff, 0, ivs, sigmas);
+            blake2b_compress(ctx, ctx->buff, 0);
             ctx->pos = 0;
             memset(ctx->buff, 0, BLAKE2B_BLOCK_LENGTH);
         } else {
@@ -147,20 +152,20 @@ static inline void blake2b_update(blake2b_ctx *ctx, const byte *in, qword inlen,
         if (ctx->t0 == 0)
             ctx->t1++;
 
-        blake2b_compress(ctx, in, in_index, ivs, sigmas);
+        blake2b_compress(ctx, in, in_index);
     }
 
     memcpy(ctx->buff, in + in_index, inlen - (size_t) in_index);
     ctx->pos += (inlen - (size_t) in_index);
 }
 
-static inline void blake2b_final(blake2b_ctx *ctx, byte *out, const constant_accessor<qword, 1> &ivs, const constant_accessor<byte, 2> &sigmas) {
+static inline void blake2b_final(blake2b_ctx *ctx, byte *out) {
     ctx->f0 = 0xFFFFFFFFFFFFFFFFL;
     ctx->t0 += ctx->pos;
     if (ctx->pos > 0 && ctx->t0 == 0)
         ctx->t1++;
 
-    blake2b_compress(ctx, ctx->buff, 0, ivs, sigmas);
+    blake2b_compress(ctx, ctx->buff, 0);
     memset(ctx->buff, 0, BLAKE2B_BLOCK_LENGTH);
     memset(ctx->state, 0, BLAKE2B_STATE_LENGTH);
 
@@ -175,9 +180,7 @@ static inline void blake2b_final(blake2b_ctx *ctx, byte *out, const constant_acc
 }
 
 static inline void kernel_blake2b_hash(const byte *indata, dword inlen, byte *outdata, dword n_batch, dword block_size, dword thread,
-                                       const blake2b_ctx *ctx,
-                                       const constant_accessor<qword, 1> &ivs,
-                                       const constant_accessor<byte, 2> &sigmas) {
+                                       const blake2b_ctx *ctx) {
 
     if (thread >= n_batch) {
         return;
@@ -186,27 +189,12 @@ static inline void kernel_blake2b_hash(const byte *indata, dword inlen, byte *ou
     byte *out = outdata + thread * block_size;
     auto local_ctx = *ctx;
     //if not precomputed CTX, call cuda_blake2b_init() with key
-    blake2b_update(&local_ctx, in, inlen, ivs, sigmas);
-    blake2b_final(&local_ctx, out, ivs, sigmas);
+    blake2b_update(&local_ctx, in, inlen);
+    blake2b_final(&local_ctx, out);
 }
 
 
 namespace hash::internal {
-
-    sycl::buffer<qword, 1> get_buf_ivs() {
-        sycl::buffer<qword, 1> buf{GLOBAL_BLAKE2B_IVS, sycl::range<1>(8)};
-        buf.set_final_data(nullptr);
-        buf.set_write_back(false);
-        return buf;
-    }
-
-    sycl::buffer<byte, 2> get_buf_sigmas() {
-        sycl::buffer<byte, 2> buf{(const byte *) GLOBAL_BLAKE2B_SIGMAS, sycl::range<2>(12, 16)};
-        buf.set_final_data(nullptr);
-        buf.set_write_back(false);
-        return buf;
-    }
-
 
     usm_shared_ptr<blake2b_ctx, alloc::device> get_blake2b_ctx(sycl::queue &q, const byte *key, dword keylen, dword n_outbit) {
         auto ctxt_device = usm_shared_ptr<blake2b_ctx, alloc::device>(1, q);
@@ -219,18 +207,16 @@ namespace hash::internal {
 
     sycl::event
     launch_blake2b_kernel(sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit, const byte *,
-                          dword, sycl::buffer<qword, 1> &buf_ivs, sycl::buffer<byte, 2> &buf_sigmas, const device_accessible_ptr<blake2b_ctx> ctx) {
+                          dword, const device_accessible_ptr<blake2b_ctx> ctx) {
         const dword block_size = n_outbit >> 3;
         //  assert(keylen <= 128); // we must define keylen at host
         auto config = get_kernel_sizes(item, n_batch);
         return item.submit([&](sycl::handler &cgh) {
             cgh.depends_on(e);
-            auto acc_ivs = buf_ivs.get_access<sycl::access::mode::read, sycl::access::target::constant_buffer>(cgh);
-            auto acc_sigmas = buf_sigmas.get_access<sycl::access::mode::read, sycl::access::target::constant_buffer>(cgh);
             cgh.parallel_for<class blake2b_kernel>(
                     sycl::nd_range<1>(sycl::range<1>(config.block) * sycl::range<1>(config.wg_size), sycl::range<1>(config.wg_size)),
                     [=](sycl::nd_item<1> item) {
-                        kernel_blake2b_hash(indata, inlen, outdata, n_batch, block_size, item.get_global_linear_id(), ctx, acc_ivs, acc_sigmas);
+                        kernel_blake2b_hash(indata, inlen, outdata, n_batch, block_size, item.get_global_linear_id(), ctx);
                     });
         });
     }
@@ -240,9 +226,7 @@ namespace hash::internal {
     launch_blake2b_kernel(sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit, const byte *key,
                           dword keylen) {
         auto ptr = get_blake2b_ctx(item, key, keylen, n_outbit);
-        auto buf_sigmas = get_buf_sigmas();
-        auto buf_ivs = get_buf_ivs();
-        launch_blake2b_kernel(item, std::move(e), indata, outdata, inlen, n_batch, n_outbit, key, keylen, buf_ivs, buf_sigmas, ptr.get()).wait();
+        launch_blake2b_kernel(item, std::move(e), indata, outdata, inlen, n_batch, n_outbit, key, keylen, ptr.get()).wait();
         return sycl::event{};
     }
 

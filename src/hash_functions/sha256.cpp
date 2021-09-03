@@ -39,22 +39,24 @@ struct sha256_ctx {
 #define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
 
 /**************************** VARIABLES *****************************/
-static const dword GLOBAL_SHA256_CONSTS[64] =
-        {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
-         0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-         0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
-         0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-         0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
-         0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-         0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
-         0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-         0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
-         0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-         0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
+
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-static void sha256_transform(sha256_ctx *ctx, const byte *data, const constant_accessor<dword, 1> &consts) {
+static void sha256_transform(sha256_ctx *ctx, const byte *data) {
     dword a, b, c, d, e, f, g, h, t1, t2, m[64];
+
+    static const dword consts[64] =
+            {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
+             0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+             0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
+             0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+             0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+             0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+             0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+             0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+             0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
+             0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+             0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
 #pragma unroll
     for (int i = 0, j = 0; i < 16; ++i, j += 4) {
@@ -100,19 +102,19 @@ static void sha256_transform(sha256_ctx *ctx, const byte *data, const constant_a
 }
 
 
-static void sha256_update(sha256_ctx *ctx, const byte *data, size_t len, const constant_accessor<dword, 1> &consts) {
+static void sha256_update(sha256_ctx *ctx, const byte *data, size_t len) {
     for (dword i = 0; i < len; ++i) {
         ctx->data[ctx->datalen] = data[i];
         ctx->datalen++;
         if (ctx->datalen == 64) {
-            sha256_transform(ctx, ctx->data, consts);
+            sha256_transform(ctx, ctx->data);
             ctx->bitlen += 512;
             ctx->datalen = 0;
         }
     }
 }
 
-static void sha256_final(sha256_ctx *ctx, byte *hash, const constant_accessor<dword, 1> &consts) {
+static void sha256_final(sha256_ctx *ctx, byte *hash) {
     dword i = ctx->datalen;
     // Pad whatever data is left in the buffer.
     if (ctx->datalen < 56) {
@@ -126,7 +128,7 @@ static void sha256_final(sha256_ctx *ctx, byte *hash, const constant_accessor<dw
         while (i < 64) {
             ctx->data[i++] = 0x00;
         }
-        sha256_transform(ctx, ctx->data, consts);
+        sha256_transform(ctx, ctx->data);
         std::memset(ctx->data, 0, 56);
     }
 
@@ -140,7 +142,7 @@ static void sha256_final(sha256_ctx *ctx, byte *hash, const constant_accessor<dw
     ctx->data[58] = ctx->bitlen >> 40;
     ctx->data[57] = ctx->bitlen >> 48;
     ctx->data[56] = ctx->bitlen >> 56;
-    sha256_transform(ctx, ctx->data, consts);
+    sha256_transform(ctx, ctx->data);
 
     // Since this implementation uses little endian byte ordering and SHA uses big endian,
     // reverse all the bytes when copying the final state to the output hash.
@@ -156,44 +158,30 @@ static void sha256_final(sha256_ctx *ctx, byte *hash, const constant_accessor<dw
     }
 }
 
-static void kernel_sha256_hash(const byte *indata, dword inlen, byte *outdata, dword n_batch, dword thread, const constant_accessor<dword, 1> &consts) {
+static void kernel_sha256_hash(const byte *indata, dword inlen, byte *outdata, dword n_batch, dword thread) {
     if (thread >= n_batch) {
         return;
     }
     const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * SHA256_BLOCK_SIZE;
     sha256_ctx ctx{};
-    sha256_update(&ctx, in, inlen, consts);
-    sha256_final(&ctx, out, consts);
+    sha256_update(&ctx, in, inlen);
+    sha256_final(&ctx, out);
 }
 
 namespace hash::internal {
 
-    sycl::buffer<dword, 1> get_sha256_buffer() {
-        sycl::buffer<dword, 1> buf{GLOBAL_SHA256_CONSTS, sycl::range<1>(64)};
-        buf.set_final_data(nullptr);
-        buf.set_write_back(false);
-        return buf;
-    }
-
-
     sycl::event
-    launch_sha256_kernel(sycl::queue &q, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, sycl::buffer<dword, 1> &buf) {
+    launch_sha256_kernel(sycl::queue &q, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch) {
         auto config = get_kernel_sizes(q, n_batch);
         return q.submit([&](sycl::handler &cgh) {
             cgh.depends_on(e);
-            auto const_ptr = buf.get_access<sycl::access::mode::read, sycl::access::target::constant_buffer>(cgh);
             cgh.parallel_for<class sha256_kernel>(
                     sycl::nd_range<1>(sycl::range<1>(config.block) * sycl::range<1>(config.wg_size), sycl::range<1>(config.wg_size)),
                     [=](sycl::nd_item<1> item) {
-                        kernel_sha256_hash(indata, inlen, outdata, n_batch, item.get_global_linear_id(), const_ptr);
+                        kernel_sha256_hash(indata, inlen, outdata, n_batch, item.get_global_linear_id());
                     });
         });
-    }
-
-    sycl::event launch_sha256_kernel(sycl::queue &q, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch) {
-        auto buf = get_sha256_buffer();
-        return launch_sha256_kernel(q, std::move(e), indata, outdata, inlen, n_batch, buf);
     }
 
 
