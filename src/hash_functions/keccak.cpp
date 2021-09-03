@@ -32,6 +32,7 @@ static inline qword keccak_leuint64(const void *in) {
 template<qword rate_bits>
 static inline void keccak_extract(keccak_ctx_t *ctx) {
     constexpr qword len = rate_bits >> 6;
+#pragma unroll
     for (qword i = 0; i < len; i++) {
         qword a = keccak_leuint64((qword *) &ctx->state[i]);
         memcpy(ctx->q + (i * sizeof(qword)), &a, sizeof(qword));
@@ -164,6 +165,7 @@ static inline void keccak_permutations(keccak_ctx_t *ctx, const constant_accesso
 
 template<int absorb_round>
 static inline void keccak_absorb(keccak_ctx_t *ctx, const byte *in, const constant_accessor<qword, 1> &consts) {
+#pragma unroll
     for (int offset = 0, i = 0; i < absorb_round; ++i) {
         ctx->state[i] ^= keccak_leuint64(in + offset);
         offset += 8;

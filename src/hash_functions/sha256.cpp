@@ -54,12 +54,15 @@ static const dword GLOBAL_SHA256_CONSTS[64] =
 
 /*********************** FUNCTION DEFINITIONS ***********************/
 static void sha256_transform(sha256_ctx *ctx, const byte *data, const constant_accessor<dword, 1> &consts) {
-    dword a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
+    dword a, b, c, d, e, f, g, h, t1, t2, m[64];
 
-    for (i = 0, j = 0; i < 16; ++i, j += 4) {
+#pragma unroll
+    for (int i = 0, j = 0; i < 16; ++i, j += 4) {
         m[i] = (dword) ((data[j] << 24u) | (data[j + 1u] << 16u) | (data[j + 2u] << 8u) | (data[j + 3u]));
     }
-    for (; i < 64; ++i) {
+
+#pragma unroll
+    for (int i = 16; i < 64; ++i) {
         m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
     }
 
@@ -72,7 +75,8 @@ static void sha256_transform(sha256_ctx *ctx, const byte *data, const constant_a
     g = ctx->state[6];
     h = ctx->state[7];
 
-    for (i = 0; i < 64; ++i) {
+#pragma unroll
+    for (int i = 0; i < 64; ++i) {
         t1 = h + EP1(e) + CH(e, f, g) + consts[i] + m[i];
         t2 = EP0(a) + MAJ(a, b, c);
         h = g;

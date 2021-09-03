@@ -10,8 +10,7 @@ constexpr size_t loop_count = 229;
 
 
 template<hash::method M, int ... args>
-void
-run_test(hash::runners &q, byte *input, size_t in_len, byte *expected_hash, size_t n_blocks, const byte *key = nullptr, qword keylen = 0) {
+void run_test(hash::runners &q, byte *input, size_t in_len, byte *expected_hash, size_t n_blocks, const byte *key = nullptr, qword keylen = 0) {
     byte *all_out = (byte *) malloc(hash::get_block_size<M, args...>() * n_blocks);
     byte *all_data = (byte *) malloc(in_len * n_blocks);
     duplicate(input, all_data, in_len, n_blocks);

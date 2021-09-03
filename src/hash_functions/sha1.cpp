@@ -5,14 +5,17 @@
 
 using namespace usm_smart_ptr;
 
+const inline int data_size = 64;
+
 struct sha1_ctx {
-    byte data[64] = {0};
+    byte data[data_size] = {0};
     dword datalen = 0;
     qword bitlen = 0;
     dword state[5]{};
     dword k[4]{};
 
     sha1_ctx() {
+        //data = data_local;
         state[0] = 0x67452301;
         state[1] = 0xEFCDAB89;
         state[2] = 0x98BADCFE;
@@ -32,11 +35,13 @@ struct sha1_ctx {
 
 /*********************** FUNCTION DEFINITIONS ***********************/
 void sha1_transform(sha1_ctx *ctx, const byte *data) {
-    dword a, b, c, d, e, i, j, t, m[80];
+    dword a, b, c, d, e, t, m[80];
 
-    for (i = 0, j = 0; i < 16; ++i, j += 4)
+#pragma unroll
+    for (int i = 0, j = 0; i < 16; ++i, j += 4)
         m[i] = (dword) ((data[j] << 24) + (data[j + 1] << 16) + (data[j + 2] << 8) + (data[j + 3]));
-    for (; i < 80; ++i) {
+#pragma unroll
+    for (int i = 16; i < 80; ++i) {
         m[i] = (m[i - 3] ^ m[i - 8] ^ m[i - 14] ^ m[i - 16]);
         m[i] = (m[i] << 1) | (m[i] >> 31);
     }
@@ -47,7 +52,8 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
     d = ctx->state[3];
     e = ctx->state[4];
 
-    for (i = 0; i < 20; ++i) {
+#pragma unroll
+    for (int i = 0; i < 20; ++i) {
         t = ROTLEFT(a, 5) + ((b & c) ^ (~b & d)) + e + ctx->k[0] + m[i];
         e = d;
         d = c;
@@ -55,7 +61,8 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
         b = a;
         a = t;
     }
-    for (; i < 40; ++i) {
+#pragma unroll
+    for (int i = 20; i < 40; ++i) {
         t = ROTLEFT(a, 5) + (b ^ c ^ d) + e + ctx->k[1] + m[i];
         e = d;
         d = c;
@@ -63,7 +70,8 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
         b = a;
         a = t;
     }
-    for (; i < 60; ++i) {
+#pragma unroll
+    for (int i = 40; i < 60; ++i) {
         t = ROTLEFT(a, 5) + ((b & c) ^ (b & d) ^ (c & d)) + e + ctx->k[2] + m[i];
         e = d;
         d = c;
@@ -71,7 +79,8 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
         b = a;
         a = t;
     }
-    for (; i < 80; ++i) {
+#pragma unroll
+    for (int i = 60; i < 80; ++i) {
         t = ROTLEFT(a, 5) + (b ^ c ^ d) + e + ctx->k[3] + m[i];
         e = d;
         d = c;

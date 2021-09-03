@@ -19,7 +19,7 @@ namespace hash {
      */
     class handle {
     private:
-        std::vector<handle_item> items_;
+        std::vector<handle_item> items_{};
     public:
         /**
          * Move constructor.
@@ -27,6 +27,8 @@ namespace hash {
         explicit handle(std::vector<handle_item> &&input) noexcept:
                 items_(std::move(input)) {
         }
+
+        handle() = default;
 
         /**
          * Rule of five, we need to redefine it.
@@ -41,7 +43,7 @@ namespace hash {
          * which results in freeing the USM allocated memory
          */
         void wait() {
-            for (auto &worker:items_) {
+            for (auto &worker: items_) {
                 worker.dev_e_.wait();
             }
             items_.clear();
@@ -52,7 +54,7 @@ namespace hash {
          * which results in freeing the USM allocated memory
          */
         void wait_and_throw() {
-            for (auto &worker:items_) {
+            for (auto &worker: items_) {
                 worker.dev_e_.wait_and_throw();
             }
             items_.clear();
@@ -75,7 +77,7 @@ namespace hash {
         ~handle() noexcept {
             if (!items_.empty()) {
                 std::cerr << "Destroying handled that still holds data. Did you forget to call .wait()?\n";
-                for (auto &e:items_) {
+                for (auto &e: items_) {
                     try {
                         e.dev_e_.wait_and_throw();
                     }

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 project(SYCL_HASH LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-option(USE_IMPLICIT_MEMCPY "EXPERIMENTAL: The runtime will try to detect whether your memory was allocated on the device and move memory accordingly. Require msync hack." ON)
+option(USE_IMPLICIT_MEMCPY "EXPERIMENTAL: The runtime will try to detect whether your memory was allocated on the device and move memory accordingly. Requires potentially msync hack." ON)
 if (USE_IMPLICIT_MEMCPY)
     message(WARNING "Using experimental implicit memory copy. The SYCL spec is unclear on the host device behaviour. Behaviour can be implementation defined.")
     add_compile_definitions(IMPLICIT_MEMORY_COPY)
@@ -16,8 +16,7 @@ endif ()
 
 
 # If you're using the DPCPP compiler, these flags will be used. Set here the devies you want to target
-set(DPCPP_FLAGS -fsycl -fsycl-targets=nvptx64-nvidia-cuda-sycldevice -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75)
-#set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice)
+set(DPCPP_FLAGS -fsycl -fsycl-targets=spir64_x86_64,nvptx64-nvidia-cuda -Wno-unknown-cuda-version -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_75 -v)
 include(cmake/FindSYCL.cmake)
 
 # Default C++ Flags for warnings and optimisation

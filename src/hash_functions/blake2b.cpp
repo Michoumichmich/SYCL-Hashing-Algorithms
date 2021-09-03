@@ -81,8 +81,10 @@ static inline void blake2b_G(blake2b_G_arg arg) {
 
 static inline void blake2b_init_state(blake2b_ctx *ctx, const constant_accessor<qword, 1> &ivs) {
     memcpy(ctx->state, ctx->chain, BLAKE2B_CHAIN_LENGTH);
-    for (dword i = 0; i < 4; i++)
+#pragma unroll
+    for (dword i = 0; i < 4; i++) {
         ctx->state[BLAKE2B_CHAIN_SIZE + i] = ivs[i];
+    }
 
     ctx->state[12] = ctx->t0 ^ ivs[4];
     ctx->state[13] = ctx->t1 ^ ivs[5];
@@ -94,8 +96,11 @@ static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inof
     blake2b_init_state(ctx, ivs);
 
     qword m[16];
-    for (dword j = 0; j < 16; j++)
+#pragma unroll
+    for (dword j = 0; j < 16; j++) {
         m[j] = blake2b_leuint64(in + inoffset + (j << 3));
+    }
+
 
     for (dword round = 0; round < BLAKE2B_ROUNDS; round++) {
         blake2b_G({ctx, m[sigmas[round][0]], m[sigmas[round][1]], 0, 4, 8, 12});
@@ -108,6 +113,7 @@ static inline void blake2b_compress(blake2b_ctx *ctx, const byte *in, dword inof
         blake2b_G({ctx, m[sigmas[round][14]], m[sigmas[round][15]], 3, 4, 9, 14});
     }
 
+#pragma unroll
     for (dword offset = 0; offset < BLAKE2B_CHAIN_SIZE; offset++)
         ctx->chain[offset] = ctx->chain[offset] ^ ctx->state[offset] ^ ctx->state[offset + 8];
 }

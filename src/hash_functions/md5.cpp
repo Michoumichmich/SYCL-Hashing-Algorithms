@@ -46,6 +46,7 @@ static inline void md5_transform(md5_ctx *ctx, const byte *data) {
     // MD5 specifies big endian byte order, but this implementation assumes a little
     // endian byte order CPU. Reverse all the bytes upon input, and re-reverse them
     // on output (in md5_final()).
+#pragma unroll
     for (dword i = 0, j = 0; i < 16; ++i, j += 4)
         m[i] = (dword) ((data[j]) + (data[j + 1] << 8) + (data[j + 2] << 16) + (data[j + 3] << 24));
 
