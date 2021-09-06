@@ -9,7 +9,7 @@ struct md5_ctx {
     qword bitlen = 0;
     dword datalen = 0;
     byte data[64] = {0};
-    dword state[4]{};
+    dword state[ 4]{};
 
     md5_ctx() {
         state[0] = 0x67452301;
@@ -47,7 +47,7 @@ static inline void md5_transform(md5_ctx *ctx, const byte *data) {
     // endian byte order CPU. Reverse all the bytes upon input, and re-reverse them
     // on output (in md5_final()).
 #ifdef __NVPTX__
-#pragma unroll
+//#pragma unroll
 #endif
     for (dword i = 0, j = 0; i < 16; ++i, j += 4)
         m[i] = (dword) ((data[j]) + (data[j + 1] << 8) + (data[j + 2] << 16) + (data[j + 3] << 24));
