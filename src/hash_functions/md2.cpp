@@ -2,10 +2,13 @@
 #include <internal/determine_kernel_config.hpp>
 
 #include <cstring>
+#include <runtime_index_wrapper.hpp>
 
 
 using namespace usm_smart_ptr;
 using namespace hash;
+using sycl::ext::runtime_index_wrapper;
+
 
 struct md2_ctx {
     int len = 0;
@@ -47,6 +50,7 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data) {
     t = 0;
 #pragma unroll
     for (dword j = 0; j < 18; ++j) {
+#pragma unroll
         for (unsigned char &k: ctx->state) {
             t = k ^= consts[t];
         }
@@ -62,7 +66,7 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data) {
 
 static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len) {
     for (size_t i = 0; i < len; ++i) {
-        ctx->data[ctx->len] = data[i];
+        runtime_index_wrapper(ctx->data, ctx->len) = data[i];
         ctx->len++;
         if (ctx->len == MD2_BLOCK_SIZE) {
             md2_transform(ctx, ctx->data);
