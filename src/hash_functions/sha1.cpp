@@ -3,6 +3,13 @@
 
 #include <cstring>
 
+
+template<typename T>
+static inline std::enable_if_t<std::is_same_v<T, std::byte> || std::is_same_v<T, uint8_t>, uint32_t>
+upsample(const T &hi_hi, const T &hi, const T &lo, const T &lo_lo) {
+    return sycl::upsample(sycl::upsample((uint8_t) hi_hi, (uint8_t) hi), sycl::upsample((uint8_t) lo, (uint8_t) lo_lo));
+}
+
 using namespace usm_smart_ptr;
 
 struct sha1_ctx {
@@ -34,11 +41,9 @@ struct sha1_ctx {
 void sha1_transform(sha1_ctx *ctx, const byte *data) {
     dword a, b, c, d, e, t, m[80];
 
-#ifdef __NVPTX__
 #pragma unroll
-#endif
-    for (qword i = 0, j = 0; i < 16; ++i, j += 4)
-        m[i] = (dword) ((data[j] << 24) + (data[j + 1] << 16) + (data[j + 2] << 8) + (data[j + 3]));
+    for (uint i = 0, j = 0; i < 16u; ++i, j += 4)
+        m[i] = upsample(data[j], data[j + 1], data[j + 2], data[j + 3]);
 
 #pragma unroll
     for (qword i = 16; i < 80; ++i) {
