@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <SYCL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <type_traits>
 #include <array>
 #include <tools/intrinsics.hpp>

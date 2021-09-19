@@ -24,7 +24,7 @@ struct md2_ctx {
 /*********************** FUNCTION DEFINITIONS ***********************/
 template<typename T>
 static inline void md2_transform(md2_ctx *ctx, T data) {
-    static const byte consts[256] =
+    runtime_byte_array<256> consts
             {41, 46, 67, 201, 162, 216, 124, 1, 61, 54, 84, 161, 236, 240, 6,
              19, 98, 167, 5, 243, 192, 199, 115, 140, 152, 147, 43, 217, 188, 76,
              130, 202, 30, 155, 87, 60, 253, 212, 224, 22, 103, 66, 111, 24, 138,
@@ -93,7 +93,7 @@ static inline void md2_final(md2_ctx *ctx, byte *hash) {
     if (to_pad > 0) {
         for (int i = ctx->len; i < MD2_BLOCK_SIZE; ++i) {
             ctx->data.write(i, (byte) to_pad);
-       //     memset(ctx->data + ctx->len, (byte) to_pad, (dword) to_pad);
+            //     memset(ctx->data + ctx->len, (byte) to_pad, (dword) to_pad);
         }
     }
     md2_transform(ctx, ctx->data);
