@@ -23,8 +23,8 @@ struct md2_ctx {
 
 /*********************** FUNCTION DEFINITIONS ***********************/
 template<typename T>
-static inline void md2_transform(md2_ctx *ctx, T data) {
-    runtime_byte_array<256> consts
+static inline void md2_transform(md2_ctx *ctx, const T &data) {
+    constexpr byte consts[256]
             {41, 46, 67, 201, 162, 216, 124, 1, 61, 54, 84, 161, 236, 240, 6,
              19, 98, 167, 5, 243, 192, 199, 115, 140, 152, 147, 43, 217, 188, 76,
              130, 202, 30, 155, 87, 60, 253, 212, 224, 22, 103, 66, 111, 24, 138,
