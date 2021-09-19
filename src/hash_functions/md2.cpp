@@ -2,7 +2,8 @@
 #include <internal/determine_kernel_config.hpp>
 
 #include <cstring>
-#include <runtime_index_wrapper.hpp>
+#include <tools/runtime_index_wrapper.hpp>
+#include <tools/runtime_byte_array.hpp>
 
 
 using namespace usm_smart_ptr;
@@ -12,7 +13,7 @@ using sbb::runtime_index_wrapper;
 
 struct md2_ctx {
     int len = 0;
-    byte data[16] = {0};
+    runtime_byte_array<16> data{};
     byte state[48] = {0};
     byte checksum[16] = {0};
 };
@@ -21,7 +22,8 @@ struct md2_ctx {
 
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-static inline void md2_transform(md2_ctx *ctx, const byte *data) {
+template<typename T>
+static inline void md2_transform(md2_ctx *ctx, T data) {
     static const byte consts[256] =
             {41, 46, 67, 201, 162, 216, 124, 1, 61, 54, 84, 161, 236, 240, 6,
              19, 98, 167, 5, 243, 192, 199, 115, 140, 152, 147, 43, 217, 188, 76,
@@ -77,12 +79,7 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data) {
 
 static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len) {
     for (size_t i = 0; i < len; ++i) {
-#ifdef __NVPTX__
-        runtime_index_wrapper(ctx->data, ctx->len, data[i]);
-#else
-        ctx->data[ctx->len] = data[i];
-#endif
-
+        ctx->data.write(ctx->len, data[i]);
         ctx->len++;
         if (ctx->len == MD2_BLOCK_SIZE) {
             md2_transform(ctx, ctx->data);
@@ -93,7 +90,12 @@ static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len) {
 
 static inline void md2_final(md2_ctx *ctx, byte *hash) {
     int to_pad = (int) MD2_BLOCK_SIZE - ctx->len;
-    if (to_pad > 0)memset(ctx->data + ctx->len, (byte) to_pad, (dword) to_pad);
+    if (to_pad > 0) {
+        for (int i = ctx->len; i < MD2_BLOCK_SIZE; ++i) {
+            ctx->data.write(i, (byte) to_pad);
+       //     memset(ctx->data + ctx->len, (byte) to_pad, (dword) to_pad);
+        }
+    }
     md2_transform(ctx, ctx->data);
     md2_transform(ctx, ctx->checksum);
     memcpy(hash, ctx->state, MD2_BLOCK_SIZE);
