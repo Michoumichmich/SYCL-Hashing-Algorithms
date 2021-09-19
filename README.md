@@ -16,14 +16,17 @@ The following hashing methods are currently available:
 
 Some functions were ported from a CUDA implementation. The SYCL code was tested unchanged across the different implementations and hardware. Here's how they perform (the values are in GB/s):
 
-| Function | Native CUDA | SYCL on CUDA (optimised/original) | SYCL on ComputeCPP CPU (spir64/spirv64) | SYCL on DPC++ CPU (spir64_x86_64) | SYCL on hipSYCL (omp/cuda) |
+| Function | Native CUDA | SYCL on CUDA (optimised/original)           | SYCL on ComputeCPP CPU (spir64/spirv64) | SYCL on DPC++ CPU (spir64_x86_64) | SYCL on hipSYCL (omp/cuda) |
 | -------- | ----------- | ------------------------------------------- | --------------------------------------- | --------------------------------- | -------------------------- |
 | keccak   | 15.7        | 23.0                                        | 4.14 / 4.08                             | 4.98                              | 4.32 / 23.0                |
-| md5      | 14.6        | 20.3                                        | 6.26 / 8.70                             | 10.5                              | 9.27 / 20.2                |
-| blake2b  | 14.7        | 21.6 / 18.6                                 | 8.10 / 7.85                             | 3.65                              | 6.03 / 17.8                |
-| sha1     | 13.1        | 19.34 / 14.9                                | 3.61 / 1.53                             | 3.41                              | 4.26 / 19.2                |
-| sha256   | 13.4        | 19.15 / 13.6                                | 2.23 / 2.00                             | 2.96                              | 2.93 / 19.0                |
+| md5      | 14.6        | 20.3                                        | 6.26 / 8.70                             | 0.31                              | 9.27 / 20.2                |
+| blake2b  | 14.7        | 21.6 / 18.6                                 | 9.46 / 9.46                             | 12.3                              | 7.71 / 17.8                |
+| sha1     | 13.1        | 19.34 / 14.9                                | 3.61 / 2.59                             | 0.22                              | 4.39 / 19.2                |
+| sha256   | 13.4        | 19.15 / 13.6                                | 2.23 / 1.74                             | 2.14                              | 2.93 / 19.0                |
 | md2      | 4.18        | 4.23/ 2.40                                  | 0.22 / 0.25                             | 0.112                             | 0.25 / 2.33                |
+
+### Note
+Something broke the spir64 backend of DPC++ and it produces now very slow code
 
 Benchmark configuration:
 
