@@ -25,7 +25,7 @@ int main() {
     size_t n_blocs = 1024 * 6;
     size_t n_iters = 40;
     auto cpu_q = try_get_queue(sycl::cpu_selector{});
-    auto cuda_q = try_get_queue(cuda_selector{});
+    auto cuda_q = try_get_queue(sycl::gpu_selector{});
 
 //    auto ptr = (byte *) malloc(input_block_size * 100 * sizeof(byte));
 //    auto out = (byte *) malloc(hash::get_block_size<hash::method::sha256>() * 100 * sizeof(byte));

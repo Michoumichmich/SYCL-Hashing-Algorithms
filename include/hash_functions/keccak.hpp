@@ -16,13 +16,8 @@ namespace hash::internal {
     using namespace usm_smart_ptr;
 
 
-    sycl::buffer<qword, 1> get_buf_keccak_consts();
-
     sycl::event
     launch_keccak_kernel(bool is_sha3, sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit);
 
-    sycl::event
-    launch_keccak_kernel(bool is_sha3, sycl::queue &item, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit,
-                         sycl::buffer<qword, 1> &buf_keccak_consts);
 
 }

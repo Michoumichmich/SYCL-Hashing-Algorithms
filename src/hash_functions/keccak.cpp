@@ -1,31 +1,26 @@
 #include "hash_functions/keccak.hpp"
-#include <internal/determine_kernel_config.hpp>
+#include "internal/determine_kernel_config.hpp"
+#include "internal/common.hpp"
 
 #include <cstring>
 #include <utility>
 
 using namespace usm_smart_ptr;
 
-static const qword GLOBAL_KECCAK_CONSTS[24] =
-        {0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
-         0x8000000080008000, 0x000000000000808b, 0x0000000080000001,
-         0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
-         0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
-         0x000000008000808b, 0x800000000000008b, 0x8000000000008089,
-         0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
-         0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
-         0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
+
 
 struct keccak_ctx_t {
     qword bits_in_queue = 0;
-    qword state[KECCAK_STATE_SIZE] = {0};
+    qword state[KECCAK_STATE_SIZE] = {qword(0)};
     byte q[KECCAK_Q_SIZE] = {0};
 };
 
-static inline qword keccak_leuint64(const void *in) {
+template<typename T>
+static inline qword keccak_leuint64(const T *in) {
     qword a;
-    memcpy(&a, in, 8);
+    std::memcpy(&a, in, 8);
     return a;
+  //  return hash::upsample_8(in);
 }
 
 
@@ -34,7 +29,7 @@ static inline void keccak_extract(keccak_ctx_t *ctx) {
     constexpr qword len = rate_bits >> 6;
 #pragma unroll
     for (qword i = 0; i < len; i++) {
-        qword a = keccak_leuint64((qword *) &ctx->state[i]);
+        qword a = ctx->state[i];
         memcpy(ctx->q + (i * sizeof(qword)), &a, sizeof(qword));
     }
 }
@@ -44,7 +39,18 @@ static inline qword keccak_ROTL64(qword a, qword b) {
 }
 //#define keccak_ROTL64(a, b) ((a) << (b)) | ((a) >> (64 - (b)))
 
-static inline void keccak_permutations(keccak_ctx_t *ctx, const constant_accessor<qword, 1> &consts) {
+static inline void keccak_permutations(keccak_ctx_t *ctx) {
+    static const qword consts[24] =
+            {0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
+             0x8000000080008000, 0x000000000000808b, 0x0000000080000001,
+             0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
+             0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
+             0x000000008000808b, 0x800000000000008b, 0x8000000000008089,
+             0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
+             0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
+             0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
+
+
     qword *A = ctx->state;
     qword *a00 = A, *a01 = A + 1, *a02 = A + 2, *a03 = A + 3, *a04 = A + 4;
     qword *a05 = A + 5, *a06 = A + 6, *a07 = A + 7, *a08 = A + 8, *a09 = A + 9;
@@ -52,7 +58,7 @@ static inline void keccak_permutations(keccak_ctx_t *ctx, const constant_accesso
     qword *a15 = A + 15, *a16 = A + 16, *a17 = A + 17, *a18 = A + 18, *a19 = A + 19;
     qword *a20 = A + 20, *a21 = A + 21, *a22 = A + 22, *a23 = A + 23, *a24 = A + 24;
 
-    for (dword i = 0; i < KECCAK_ROUND; i++) {
+    for (unsigned long i: consts) {
         /* Theta */
         qword c0 = *a00 ^ *a05 ^ *a10 ^ *a15 ^ *a20;
         qword c1 = *a01 ^ *a06 ^ *a11 ^ *a16 ^ *a21;
@@ -158,31 +164,31 @@ static inline void keccak_permutations(keccak_ctx_t *ctx, const constant_accesso
         *a21 = c1;
 
         /* Iota */
-        *a00 ^= consts[i];
+        *a00 ^= i;
     }
 }
 
 
 template<int absorb_round>
-static inline void keccak_absorb(keccak_ctx_t *ctx, const byte *in, const constant_accessor<qword, 1> &consts) {
+static inline void keccak_absorb(keccak_ctx_t *ctx, const byte *in) {
 #pragma unroll
-    for (int offset = 0, i = 0; i < absorb_round; ++i) {
+    for (uint offset = 0, i = 0; i < absorb_round; ++i) {
         ctx->state[i] ^= keccak_leuint64(in + offset);
         offset += 8;
     }
-    keccak_permutations(ctx, consts);
+    keccak_permutations(ctx);
 }
 
 template<qword digest_bit_len>
-static inline void keccak_pad(keccak_ctx_t *ctx, const constant_accessor<qword, 1> &consts) {
+static inline void keccak_pad(keccak_ctx_t *ctx) {
     constexpr dword rate_bits = 1600 - ((digest_bit_len) << 1);
     constexpr dword absorb_round = rate_bits >> 6;
 
     ctx->q[ctx->bits_in_queue >> 3] |= (1L << (ctx->bits_in_queue & 7));
 
     if (++(ctx->bits_in_queue) == rate_bits) {
-        keccak_absorb<absorb_round>(ctx, ctx->q, consts);
-        ctx->bits_in_queue = 0;
+        keccak_absorb<absorb_round>(ctx, ctx->q);
+        ctx->bits_in_queue = qword{0};
     }
 
     {
@@ -202,13 +208,13 @@ static inline void keccak_pad(keccak_ctx_t *ctx, const constant_accessor<qword, 
     }
 
     ctx->state[(rate_bits - 1) >> 6] ^= 9223372036854775808ULL;/* 1 << 63 */
-    keccak_permutations(ctx, consts);
+    keccak_permutations(ctx);
     keccak_extract<rate_bits>(ctx);
     ctx->bits_in_queue = rate_bits;
 }
 
 template<qword digest_bit_len>
-static inline void keccak_update(keccak_ctx_t *ctx, const byte *in, qword inlen, const constant_accessor<qword, 1> &consts) {
+static inline void keccak_update(keccak_ctx_t *ctx, const byte *in, qword inlen) {
     constexpr dword rate_bits = 1600 - ((digest_bit_len) << 1);
     constexpr dword absorb_round = rate_bits >> 6;
     constexpr qword rate_BYTEs = rate_bits >> 3;
@@ -219,7 +225,7 @@ static inline void keccak_update(keccak_ctx_t *ctx, const byte *in, qword inlen,
     while (count < (int64_t) inlen) {
         if (BYTEs == 0 && count <= ((int64_t) (inlen - rate_BYTEs))) {
             do {
-                keccak_absorb<absorb_round>(ctx, in + count, consts);
+                keccak_absorb<absorb_round>(ctx, in + count);
                 count += rate_BYTEs;
             } while (count <= ((int64_t) (inlen - rate_BYTEs)));
         } else {
@@ -230,7 +236,7 @@ static inline void keccak_update(keccak_ctx_t *ctx, const byte *in, qword inlen,
             count += (int64_t) partial;
 
             if (BYTEs == rate_BYTEs) {
-                keccak_absorb<absorb_round>(ctx, ctx->q, consts);
+                keccak_absorb<absorb_round>(ctx, ctx->q);
                 BYTEs = 0;
             }
         }
@@ -239,7 +245,7 @@ static inline void keccak_update(keccak_ctx_t *ctx, const byte *in, qword inlen,
 }
 
 template<qword digest_bit_len>
-static inline void keccak_final(bool is_sha3, keccak_ctx_t *ctx, byte *out, const constant_accessor<qword, 1> &consts) {
+static inline void keccak_final(bool is_sha3, keccak_ctx_t *ctx, byte *out) {
     constexpr dword rate_bits = 1600 - ((digest_bit_len) << 1);
     constexpr dword absorb_round = rate_bits >> 6;
     constexpr qword rate_BYTEs = rate_bits >> 3;
@@ -251,12 +257,12 @@ static inline void keccak_final(bool is_sha3, keccak_ctx_t *ctx, byte *out, cons
         ctx->bits_in_queue += 2;
     }
 
-    keccak_pad<digest_bit_len>(ctx, consts);
-    qword i = 0;
+    keccak_pad<digest_bit_len>(ctx);
+    auto i = qword(0);
 
     while (i < digest_bit_len) {
         if (ctx->bits_in_queue == 0) {
-            keccak_permutations(ctx, consts);
+            keccak_permutations(ctx);
             keccak_extract<rate_bits>(ctx);
             ctx->bits_in_queue = rate_bits;
         }
@@ -269,67 +275,50 @@ static inline void keccak_final(bool is_sha3, keccak_ctx_t *ctx, byte *out, cons
 }
 
 template<qword digest_bit_len>
-static inline void kernel_keccak_hash(bool is_sha3, const byte *indata, dword inlen, byte *outdata, dword n_batch, dword thread, const constant_accessor<qword, 1> &consts) {
+static inline void kernel_keccak_hash(bool is_sha3, const byte *indata, dword inlen, byte *outdata, dword n_batch, dword thread) {
     if (thread >= n_batch) {
         return;
     }
     const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * (digest_bit_len >> 3);
     keccak_ctx_t ctx{};
-    keccak_update<digest_bit_len>(&ctx, in, inlen, consts);
-    keccak_final<digest_bit_len>(is_sha3, &ctx, out, consts);
+    keccak_update<digest_bit_len>(&ctx, in, inlen);
+    keccak_final<digest_bit_len>(is_sha3, &ctx, out);
 }
 
 namespace hash::internal {
 
-    sycl::buffer<qword, 1> get_buf_keccak_consts() {
-        sycl::buffer<qword, 1> buf{GLOBAL_KECCAK_CONSTS, sycl::range<1>(24)};
-        buf.set_final_data(nullptr);
-        buf.set_write_back(false);
-        return buf;
-    }
-
-
     template<dword n_outbit_>
     sycl::event
-    launch_keccak_kernel_template(bool is_sha3, sycl::queue &item, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch,
-                                  sycl::buffer<qword, 1> &buf_keccak_consts) {
+    launch_keccak_kernel_template(bool is_sha3, sycl::queue &item, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch) {
         auto config = get_kernel_sizes(item, n_batch);
         return item.submit([&](sycl::handler &cgh) {
             cgh.depends_on(std::move(e));
-            auto accessor = buf_keccak_consts.get_access<sycl::access::mode::read, sycl::access::target::constant_buffer>(cgh);
             cgh.parallel_for<keccak_kernel<n_outbit_>>(
                     sycl::nd_range<1>(sycl::range<1>(config.block) * sycl::range<1>(config.wg_size), sycl::range<1>(config.wg_size)),
                     [=](sycl::nd_item<1> item) {
-                        kernel_keccak_hash<n_outbit_>(is_sha3, indata, inlen, outdata, n_batch, item.get_global_linear_id(), accessor);
+                        kernel_keccak_hash<n_outbit_>(is_sha3, indata, inlen, outdata, n_batch, item.get_global_linear_id());
                     });
         });
     }
 
     sycl::event
-    launch_keccak_kernel(bool is_sha3, sycl::queue &item, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit,
-                         sycl::buffer<qword, 1> &buf_keccak_consts) {
+    launch_keccak_kernel(bool is_sha3, sycl::queue &item, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit) {
         if (n_outbit == 128) {
-            return launch_keccak_kernel_template<128>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, buf_keccak_consts);
+            return launch_keccak_kernel_template<128>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch);
         } else if (n_outbit == 224) {
-            return launch_keccak_kernel_template<224>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, buf_keccak_consts);
+            return launch_keccak_kernel_template<224>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch);
         } else if (n_outbit == 256) {
-            return launch_keccak_kernel_template<256>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, buf_keccak_consts);
+            return launch_keccak_kernel_template<256>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch);
         } else if (n_outbit == 288) {
-            return launch_keccak_kernel_template<288>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, buf_keccak_consts);
+            return launch_keccak_kernel_template<288>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch);
         } else if (n_outbit == 384) {
-            return launch_keccak_kernel_template<384>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, buf_keccak_consts);
+            return launch_keccak_kernel_template<384>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch);
         } else if (n_outbit == 512) {
-            return launch_keccak_kernel_template<512>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, buf_keccak_consts);
+            return launch_keccak_kernel_template<512>(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch);
         } else {
             abort();
         }
-    }
-
-    sycl::event
-    launch_keccak_kernel(bool is_sha3, sycl::queue &item, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch, dword n_outbit) {
-        auto buf = get_buf_keccak_consts();
-        return launch_keccak_kernel(is_sha3, item, std::move(e), indata, outdata, inlen, n_batch, n_outbit, buf);
     }
 
 

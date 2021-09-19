@@ -20,7 +20,7 @@ namespace hash::internal {
              * If the device is a GPU we will try to have as many threads in each work group as possible.
              * We need to bound the value of `max_work_group_size` as it can be ANY 64-bit integer
              */
-            config.wg_size = std::min(std::max(1ul, q.get_device().get_info<sycl::info::device::max_work_group_size>()), job_size);
+            config.wg_size = std::min(std::max(1ul, 2 * q.get_device().get_info<sycl::info::device::max_work_group_size>()), job_size);
             config.wg_size = std::min(config.wg_size, 64ul); //TODO Find a better alternative than a hardcoded 64 ?
             config.block = (job_size / config.wg_size) + (job_size % config.wg_size != 0);
         } else {

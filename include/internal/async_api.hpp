@@ -37,69 +37,6 @@ namespace hash {
 
 
     /**
-     * KECCAK spec
-     */
-    template<int n_outbit>
-    class hasher<method::keccak, n_outbit> {
-
-    private:
-        runners runners_;
-        std::vector<sycl::buffer<qword, 1> >
-                buffers_;
-    public:
-        explicit hasher(const runners &v) : runners_(v) {
-            size_t size = v.size();
-            buffers_.reserve(size);
-            for (size_t i = 0; i < size; ++i) {
-                buffers_.emplace_back(internal::get_buf_keccak_consts());
-            }
-        }
-
-        handle hash(const byte *indata, dword inlen, byte *outdata, dword n_batch) {
-            size_t size = runners_.size();
-            std::vector<handle_item> handles;
-            handles.reserve(size);
-            auto items = internal::get_hash_queue_work_item<method::keccak, n_outbit>(runners_, indata, inlen, outdata, n_batch);
-            for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_with_data_copy<method::keccak, n_outbit, sycl::buffer<qword, 1> >(items[i], nullptr, 0, buffers_[i]));
-            }
-            return handle(std::move(handles));
-        }
-    };
-
-    /**
-     * SHA3 spec
-     * @tparam n_outbit
-     */
-    template<int n_outbit>
-    class hasher<method::sha3, n_outbit> {
-
-    private:
-        runners runners_;
-        std::vector<sycl::buffer<qword, 1>> buffers_;
-    public:
-        explicit hasher(const runners &v) : runners_(v) {
-            size_t size = v.size();
-            buffers_.reserve(size);
-            for (size_t i = 0; i < size; ++i) {
-                buffers_.emplace_back(internal::get_buf_keccak_consts());
-            }
-        }
-
-        handle hash(const byte *indata, dword inlen, byte *outdata, dword n_batch) {
-            size_t size = runners_.size();
-            std::vector<handle_item> handles;
-            handles.reserve(size);
-            auto items = internal::get_hash_queue_work_item<method::sha3, n_outbit>(runners_, indata, inlen, outdata, n_batch);
-            for (size_t i = 0; i < size; ++i) {
-                handles.emplace_back(internal::hash_with_data_copy<method::sha3, n_outbit, sycl::buffer<qword, 1>>(items[i], nullptr, 0, buffers_[i]));
-            }
-            return handle(std::move(handles));
-        }
-    };
-
-
-    /**
      * Blake 2B
      * @tparam n_outbit
      */

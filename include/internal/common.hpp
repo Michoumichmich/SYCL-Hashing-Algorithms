@@ -12,6 +12,15 @@
 
 namespace hash {
 
+
+    template<typename T>
+    static inline std::enable_if_t<std::is_same_v<T, std::byte> || std::is_same_v<T, unsigned char>, uint32_t>
+    upsample(const T hi_hi, const T hi, const T lo, const T lo_lo) {
+        uint16_t hi_upsampled = (uint16_t(hi_hi) << 8) + hi;
+        uint16_t lo_upsampled = (uint16_t(lo) << 8) + lo_lo;
+        return (uint32_t(hi_upsampled) << 16) + uint32_t(lo_upsampled);
+    }
+
     /**
      * A runner is composed of a queue and a double which
      * represents the device performance on a given algorithm
@@ -127,7 +136,7 @@ namespace hash {
             std::vector<queue_work> out_vector(len);
             std::vector<size_t> batch_offsets(len + 1);
             double coefs_sum = 0;
-            for (const auto &elt : v) {
+            for (const auto &elt: v) {
                 coefs_sum += elt.d;
             }
             for (size_t i = 0, prev_offset = 0; i < len; ++i) {

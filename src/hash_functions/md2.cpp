@@ -7,7 +7,7 @@
 
 using namespace usm_smart_ptr;
 using namespace hash;
-using sycl::ext::runtime_index_wrapper;
+using sbb::runtime_index_wrapper;
 
 
 struct md2_ctx {

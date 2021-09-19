@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <array>
 
-namespace sycl::ext {
+namespace sbb {
     namespace details {
         template<class...>
         struct voider {

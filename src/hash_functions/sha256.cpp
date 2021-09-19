@@ -1,5 +1,7 @@
 #include <hash_functions/sha256.hpp>
 #include <internal/determine_kernel_config.hpp>
+#include <internal/common.hpp>
+
 
 #include <cstring>
 
@@ -60,7 +62,7 @@ static void sha256_transform(sha256_ctx *ctx, const byte *data) {
 
 #pragma unroll
     for (int i = 0, j = 0; i < 16; ++i, j += 4) {
-        m[i] = (dword) ((data[j] << 24u) | (data[j + 1u] << 16u) | (data[j + 2u] << 8u) | (data[j + 3u]));
+        m[i] = hash::upsample(data[j], data[j + 1], data[j + 2], data[j + 3]);
     }
 
 #pragma unroll

@@ -3,9 +3,9 @@
 We provide in `include/tools/usm_smart_ptr.hpp` overloads to `std::unique_ptr` and `std::shared_ptr` that manages SYCL's USM memory.
 ```c++
 using namespace usm_smart_ptr;
-sycl::queue q;
+sbb::queue q;
 size_t count;
-auto usm_unique_ptr = make_unique_ptr<my_type, alloc::shared>(count, q); // could return a pointer to sycl::malloc_shared<my_type>(count, q);
+auto usm_unique_ptr = make_unique_ptr<my_type, alloc::shared>(count, q); // could return a pointer to sbb::malloc_shared<my_type>(count, q);
 auto usm_shared_ptr = make_shared_ptr<my_type, alloc::shared>(count, q);
 ```
 You can choose between `alloc::device`, `alloc::shared` and `alloc::host`. Calling `.get()` on the pointers will return a decorated pointer to the underlying memory which allow to keep track of where the memory was allocated.
@@ -49,16 +49,16 @@ We'll consider the `blake2b` method in the rest. For each method we got two over
 
 ### 1. Implicit memory copy
 ```
-hash::compute<hash::method::blake2b, n_outbit>(sycl::queue &q, const byte*, dword, byte*, dword, byte *, dword);
+hash::compute<hash::method::blake2b, n_outbit>(sbb::queue &q, const byte*, dword, byte*, dword, byte *, dword);
 ```
 This is the overload you would call if you got C++ allocated pointers to your memory (array on the stack, malloc, new[], ...).
 When calling this function, the memory will be copied behind the scenes to the device as it's the safets behaviour.
 
 
 ### 2. No memory copy
-If you wrap your memory pointers in `device_accessible_ptr<byte>` (see `include/tools/usm_smart_ptr.hpp`), then the library will assume these points to a memory that is accessible by the `sycl::device` you build your `sycl::queue` on.
+If you wrap your memory pointers in `device_accessible_ptr<byte>` (see `include/tools/usm_smart_ptr.hpp`), then the library will assume these points to a memory that is accessible by the `sbb::device` you build your `sbb::queue` on.
 ```
-hash::compute<hash::method::blake2b, n_outbit>(sycl::queue &q, const device_accessible_ptr<byte>, dword, device_accessible_ptr<byte>, dword, const byte *, dword);
+hash::compute<hash::method::blake2b, n_outbit>(sbb::queue &q, const device_accessible_ptr<byte>, dword, device_accessible_ptr<byte>, dword, const byte *, dword);
 ```
 Best, this overload will be called if you use the previously described `usm_smart_ptr wrappers` with `alloc::device` or `alloc::shared`. We voluntarily excluded `alloc::host` as the remote memory accesses could potentially cause performanec issues.
 
