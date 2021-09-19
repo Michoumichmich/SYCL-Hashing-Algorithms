@@ -41,16 +41,24 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data) {
              239, 183, 14, 102, 88, 208, 228, 166, 119, 114, 248, 235, 117, 75, 10,
              49, 68, 80, 180, 143, 237, 31, 26, 219, 153, 141, 51, 159, 17, 131,
              20};
-    dword t;
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (int j = 0; j < 16; ++j) {
         ctx->state[j + 32] = (ctx->state[j + 16] = data[j]) ^ ctx->state[j];
     }
 
-    t = 0;
+    dword t = 0;
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (dword j = 0; j < 18; ++j) {
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
         for (unsigned char &k: ctx->state) {
             t = k ^= consts[t];
         }
@@ -58,7 +66,10 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data) {
     }
 
     t = ctx->checksum[15];
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (int j = 0; j < 16; ++j) {
         t = ctx->checksum[j] ^= consts[data[j] ^ t];
     }
@@ -66,7 +77,12 @@ static inline void md2_transform(md2_ctx *ctx, const byte *data) {
 
 static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len) {
     for (size_t i = 0; i < len; ++i) {
-        runtime_index_wrapper(ctx->data, ctx->len) = data[i];
+#ifdef __NVPTX__
+        runtime_index_wrapper(ctx->data, ctx->len, data[i]);
+#else
+        ctx->data[ctx->len] = data[i];
+#endif
+
         ctx->len++;
         if (ctx->len == MD2_BLOCK_SIZE) {
             md2_transform(ctx, ctx->data);
@@ -83,11 +99,11 @@ static inline void md2_final(md2_ctx *ctx, byte *hash) {
     memcpy(hash, ctx->state, MD2_BLOCK_SIZE);
 }
 
-static inline void kernel_md2_hash(byte *indata, dword inlen, byte *outdata, dword n_batch, dword thread) {
+static inline void kernel_md2_hash(const byte *indata, dword inlen, byte *outdata, dword n_batch, dword thread) {
     if (thread >= n_batch) {
         return;
     }
-    byte *in = indata + thread * inlen;
+    const byte *in = indata + thread * inlen;
     byte *out = outdata + thread * MD2_BLOCK_SIZE;
     md2_ctx ctx{};
     md2_update(&ctx, in, inlen);
@@ -97,7 +113,7 @@ static inline void kernel_md2_hash(byte *indata, dword inlen, byte *outdata, dwo
 namespace hash::internal {
 
     sycl::event
-    launch_md2_kernel(sycl::queue &q, sycl::event e, const device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch) {
+    launch_md2_kernel(sycl::queue &q, sycl::event e, device_accessible_ptr<byte> indata, device_accessible_ptr<byte> outdata, dword inlen, dword n_batch) {
         auto config = get_kernel_sizes(q, n_batch);
         return q.submit([&](sycl::handler &cgh) {
             cgh.depends_on(e);

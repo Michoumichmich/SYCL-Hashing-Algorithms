@@ -1,8 +1,6 @@
 #include <hash_functions/md5.hpp>
 #include <internal/determine_kernel_config.hpp>
 
-
-#include "internal/common.hpp"
 #include <cstring>
 
 using namespace usm_smart_ptr;
@@ -10,15 +8,8 @@ using namespace usm_smart_ptr;
 struct md5_ctx {
     qword bitlen = 0;
     dword datalen = 0;
-    byte data[64] = {0};
-    dword state[4]{};
-
-    md5_ctx() {
-        state[0] = 0x67452301;
-        state[1] = 0xEFCDAB89;
-        state[2] = 0x98BADCFE;
-        state[3] = 0x10325476;
-    }
+    byte data[64];
+    dword state[4]{0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476};
 };
 
 
@@ -51,8 +42,10 @@ static inline void md5_transform(md5_ctx *ctx, const byte *data) {
 #ifdef __NVPTX__
 #pragma unroll
 #endif
-    for (dword i = 0, j = 0; i < 16; ++i, j += 4)
-        m[i] = hash::upsample(data[j + 3], data[j + 2], data[j + 1], data[j]);
+    for (dword i = 0, j = 0; i < 16; ++i, j += 4) {
+        m[i] = (dword) ((data[j]) + (data[j + 1] << 8) + (data[j + 2] << 16) + (data[j + 3] << 24));
+        //m[i] = hash::upsample(data[j + 3], data[j + 2], data[j + 1], data[j]);
+    }
 
     a = ctx->state[0];
     b = ctx->state[1];
@@ -134,7 +127,7 @@ static inline void md5_transform(md5_ctx *ctx, const byte *data) {
 }
 
 
-static inline void md5_update(md5_ctx *ctx, const byte *data, size_t len) {
+static inline void md5_update(md5_ctx *ctx, const byte *data, const size_t &len) {
     for (size_t i = 0; i < len; ++i) {
         ctx->data[ctx->datalen] = data[i];
         ctx->datalen++;
@@ -176,6 +169,10 @@ static inline void md5_final(md5_ctx *ctx, byte *hash) {
 
     // Since this implementation uses little endian byte ordering and MD uses big endian,
     // reverse all the bytes when copying the final state to the output hash.
+
+#ifdef __NVPTX__
+#pragma unroll
+#endif
     for (i = 0; i < 4; ++i) {
         hash[i] = (ctx->state[0] >> (i * 8)) & 0x000000ff;
         hash[i + 4] = (ctx->state[1] >> (i * 8)) & 0x000000ff;

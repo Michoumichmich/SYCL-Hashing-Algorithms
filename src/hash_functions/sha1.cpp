@@ -5,27 +5,15 @@
 #include <cstring>
 
 
-
 using namespace usm_smart_ptr;
 
 struct sha1_ctx {
-    byte data[64] = {0};
+    byte data[64];
     dword datalen = 0;
     qword bitlen = 0;
-    dword state[5]{};
-    dword k[4]{};
+    dword state[5]{0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xc3d2e1f0};
+    dword k[4]{0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6};
 
-    sha1_ctx() {
-        state[0] = 0x67452301;
-        state[1] = 0xEFCDAB89;
-        state[2] = 0x98BADCFE;
-        state[3] = 0x10325476;
-        state[4] = 0xc3d2e1f0;
-        k[0] = 0x5a827999;
-        k[1] = 0x6ed9eba1;
-        k[2] = 0x8f1bbcdc;
-        k[3] = 0xca62c1d6;
-    }
 };
 
 /****************************** MACROS ******************************/
@@ -40,10 +28,14 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
 #ifdef __NVPTX__
 #pragma unroll
 #endif
-    for (int i = 0, j = 0; i < 16; ++i, j += 4)
+    for (int i = 0, j = 0; i < 16; ++i, j += 4) {
         m[i] = hash::upsample(data[j], data[j + 1], data[j + 2], data[j + 3]);
+    }
 
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (qword i = 16; i < 80; ++i) {
         m[i] = (m[i - 3] ^ m[i - 8] ^ m[i - 14] ^ m[i - 16]);
         m[i] = (m[i] << 1) | (m[i] >> 31);
@@ -55,7 +47,9 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
     d = ctx->state[3];
     e = ctx->state[4];
 
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (dword i = 0; i < 20; ++i) {
         t = ROTLEFT(a, 5) + ((b & c) ^ (~b & d)) + e + ctx->k[0] + m[i];
         e = d;
@@ -64,7 +58,9 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
         b = a;
         a = t;
     }
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (dword i = 20; i < 40; ++i) {
         t = ROTLEFT(a, 5) + (b ^ c ^ d) + e + ctx->k[1] + m[i];
         e = d;
@@ -73,7 +69,10 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
         b = a;
         a = t;
     }
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (dword i = 40; i < 60; ++i) {
         t = ROTLEFT(a, 5) + ((b & c) ^ (b & d) ^ (c & d)) + e + ctx->k[2] + m[i];
         e = d;
@@ -82,7 +81,10 @@ void sha1_transform(sha1_ctx *ctx, const byte *data) {
         b = a;
         a = t;
     }
+
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (dword i = 60; i < 80; ++i) {
         t = ROTLEFT(a, 5) + (b ^ c ^ d) + e + ctx->k[3] + m[i];
         e = d;

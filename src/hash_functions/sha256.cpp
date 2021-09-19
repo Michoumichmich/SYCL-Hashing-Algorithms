@@ -9,7 +9,7 @@ using namespace usm_smart_ptr;
 
 /**************************** DATA TYPES ****************************/
 struct sha256_ctx {
-    byte data[64] = {};
+    byte data[64];
     qword bitlen = 0;
     dword datalen = 0;
     dword state[8]{};
@@ -60,12 +60,16 @@ static void sha256_transform(sha256_ctx *ctx, const byte *data) {
              0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
              0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (int i = 0, j = 0; i < 16; ++i, j += 4) {
         m[i] = hash::upsample(data[j], data[j + 1], data[j + 2], data[j + 3]);
     }
 
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (int i = 16; i < 64; ++i) {
         m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
     }
@@ -79,7 +83,9 @@ static void sha256_transform(sha256_ctx *ctx, const byte *data) {
     g = ctx->state[6];
     h = ctx->state[7];
 
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (int i = 0; i < 64; ++i) {
         t1 = h + EP1(e) + CH(e, f, g) + consts[i] + m[i];
         t2 = EP0(a) + MAJ(a, b, c);
