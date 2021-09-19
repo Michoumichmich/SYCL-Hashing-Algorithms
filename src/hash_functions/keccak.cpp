@@ -1,12 +1,10 @@
 #include "hash_functions/keccak.hpp"
 #include "internal/determine_kernel_config.hpp"
-#include "internal/common.hpp"
 
 #include <cstring>
 #include <utility>
 
 using namespace usm_smart_ptr;
-
 
 
 struct keccak_ctx_t {
@@ -18,9 +16,9 @@ struct keccak_ctx_t {
 template<typename T>
 static inline qword keccak_leuint64(const T *in) {
     qword a;
-    std::memcpy(&a, in, 8);
+    std::memcpy(&a, (void *) in, 8);
     return a;
-  //  return hash::upsample_8(in);
+    //  return hash::upsample_8(in);
 }
 
 
