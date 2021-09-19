@@ -1,31 +1,25 @@
 #include "hash_functions/keccak.hpp"
 #include "internal/determine_kernel_config.hpp"
 
-#include <cstring>
-#include <utility>
-
 using namespace usm_smart_ptr;
-
 
 struct keccak_ctx_t {
     qword bits_in_queue = 0;
-    qword state[KECCAK_STATE_SIZE] = {qword(0)};
-    byte q[KECCAK_Q_SIZE] = {0};
+    qword state[KECCAK_STATE_SIZE]{};
+    byte q[KECCAK_Q_SIZE]{};
 };
 
-template<typename T>
-static inline qword keccak_leuint64(const T *in) {
+static inline qword keccak_leuint64(const void *in) {
     qword a;
-    std::memcpy(&a, (void *) in, 8);
+    memcpy(&a, in, 8);
     return a;
-    //  return hash::upsample_8(in);
 }
 
 
 template<qword rate_bits>
 static inline void keccak_extract(keccak_ctx_t *ctx) {
     constexpr qword len = rate_bits >> 6;
-#pragma unroll
+#pragma unroll len
     for (qword i = 0; i < len; i++) {
         qword a = ctx->state[i];
         memcpy(ctx->q + (i * sizeof(qword)), &a, sizeof(qword));
@@ -38,7 +32,7 @@ static inline qword keccak_ROTL64(qword a, qword b) {
 //#define keccak_ROTL64(a, b) ((a) << (b)) | ((a) >> (64 - (b)))
 
 static inline void keccak_permutations(keccak_ctx_t *ctx) {
-    static const qword consts[24] =
+    static constexpr std::array<qword, KECCAK_ROUND> consts =
             {0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
              0x8000000080008000, 0x000000000000808b, 0x0000000080000001,
              0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
@@ -48,7 +42,6 @@ static inline void keccak_permutations(keccak_ctx_t *ctx) {
              0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
              0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
 
-
     qword *A = ctx->state;
     qword *a00 = A, *a01 = A + 1, *a02 = A + 2, *a03 = A + 3, *a04 = A + 4;
     qword *a05 = A + 5, *a06 = A + 6, *a07 = A + 7, *a08 = A + 8, *a09 = A + 9;
@@ -56,7 +49,7 @@ static inline void keccak_permutations(keccak_ctx_t *ctx) {
     qword *a15 = A + 15, *a16 = A + 16, *a17 = A + 17, *a18 = A + 18, *a19 = A + 19;
     qword *a20 = A + 20, *a21 = A + 21, *a22 = A + 22, *a23 = A + 23, *a24 = A + 24;
 
-    for (unsigned long i: consts) {
+    for (qword i: consts) {
         /* Theta */
         qword c0 = *a00 ^ *a05 ^ *a10 ^ *a15 ^ *a20;
         qword c1 = *a01 ^ *a06 ^ *a11 ^ *a16 ^ *a21;
@@ -167,7 +160,7 @@ static inline void keccak_permutations(keccak_ctx_t *ctx) {
 }
 
 
-template<int absorb_round>
+template<qword absorb_round>
 static inline void keccak_absorb(keccak_ctx_t *ctx, const byte *in) {
 #pragma unroll
     for (uint offset = 0, i = 0; i < absorb_round; ++i) {
@@ -186,7 +179,7 @@ static inline void keccak_pad(keccak_ctx_t *ctx) {
 
     if (++(ctx->bits_in_queue) == rate_bits) {
         keccak_absorb<absorb_round>(ctx, ctx->q);
-        ctx->bits_in_queue = qword{0};
+        ctx->bits_in_queue = 0;
     }
 
     {
@@ -256,7 +249,7 @@ static inline void keccak_final(bool is_sha3, keccak_ctx_t *ctx, byte *out) {
     }
 
     keccak_pad<digest_bit_len>(ctx);
-    auto i = qword(0);
+    qword i = 0;
 
     while (i < digest_bit_len) {
         if (ctx->bits_in_queue == 0) {
@@ -318,6 +311,5 @@ namespace hash::internal {
             abort();
         }
     }
-
 
 }

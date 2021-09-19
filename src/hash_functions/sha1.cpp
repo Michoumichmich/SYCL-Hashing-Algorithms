@@ -37,7 +37,9 @@ struct sha1_ctx {
 void sha1_transform(sha1_ctx *ctx, const byte *data) {
     dword a, b, c, d, e, t, m[80];
 
+#ifdef __NVPTX__
 #pragma unroll
+#endif
     for (int i = 0, j = 0; i < 16; ++i, j += 4)
         m[i] = hash::upsample(data[j], data[j + 1], data[j + 2], data[j + 3]);
 
