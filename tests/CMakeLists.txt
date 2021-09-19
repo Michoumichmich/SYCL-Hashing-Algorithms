@@ -14,6 +14,7 @@ add_executable(
         test_all_hashes
         tests/tests.cpp
 )
+
 add_sycl_to_target(TARGET test_all_hashes SOURCES tests/tests.cpp)
 
 target_link_libraries(test_all_hashes PUBLIC gtest_main sycl_hash)

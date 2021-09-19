@@ -77,16 +77,16 @@ namespace hash {
          */
         ~handle() noexcept {
             if (!items_.empty()) {
-                std::cout << "Destroying handled that still holds data. Did you forget to call .wait()?\n";
+                std::cerr << "Destroying handled that still holds data. Did you forget to call .wait()?\n";
                 for (auto &e: items_) {
                     try {
                         e.dev_e_.wait_and_throw();
                     }
                     catch (sycl::exception const &e) {
-                        std::cout << "Caught asynchronous SYCL exception at handle destruction: " << e.what() << std::endl;
+                        std::cerr << "Caught asynchronous SYCL exception at handle destruction: " << e.what() << std::endl;
                     }
                     catch (std::exception const &e) {
-                        std::cout << "Caught asynchronous STL exception at handle destruction: " << e.what() << std::endl;
+                        std::cerr << "Caught asynchronous STL exception at handle destruction: " << e.what() << std::endl;
                     }
                 }
                 items_.clear();

@@ -16,8 +16,8 @@ namespace hash {
     template<typename T>
     static inline std::enable_if_t<std::is_same_v<T, std::byte> || std::is_same_v<T, unsigned char>, uint32_t>
     upsample(const T hi_hi, const T hi, const T lo, const T lo_lo) {
-        uint16_t hi_upsampled = (uint16_t(hi_hi) << 8) + hi;
-        uint16_t lo_upsampled = (uint16_t(lo) << 8) + lo_lo;
+        uint16_t hi_upsampled = (uint16_t(hi_hi) << 8) + uint16_t(hi);
+        uint16_t lo_upsampled = (uint16_t(lo) << 8) + uint16_t(lo_lo);
         return (uint32_t(hi_upsampled) << 16) + uint32_t(lo_upsampled);
     }
 

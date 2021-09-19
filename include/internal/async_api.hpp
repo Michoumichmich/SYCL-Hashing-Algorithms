@@ -6,7 +6,7 @@
 
 namespace hash {
     /**
-     * Base class for hashinig
+     * Base class for hashing
      * @tparam M
      * @tparam n_outbit
      */
@@ -45,7 +45,7 @@ namespace hash {
 
     private:
         hash::runners runners_;
-        std::vector<usm_shared_ptr < blake2b_ctx, alloc::device>> keyed_ctxts_;
+        std::vector<usm_shared_ptr < blake2b_ctx, alloc::device>> keyed_ctxts_{};
     public:
         explicit hasher(const hash::runners &v, const byte *key, dword keylen) : runners_(v) {
             size_t size = v.size();

@@ -65,7 +65,7 @@ set(sycl_hash_all_sources
         include/tools/usm_smart_ptr.hpp
         )
 
-add_library(sycl_hash ${sycl_hash_all_sources} ${sycl_hash_all_kernels})
+add_library(sycl_hash SHARED ${sycl_hash_all_sources} ${sycl_hash_all_kernels})
 add_sycl_to_target(TARGET sycl_hash SOURCES ${sycl_hash_all_kernels})
 
 

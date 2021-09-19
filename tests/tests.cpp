@@ -6,7 +6,7 @@
 #include "tests_helpers.hpp"
 #include <gtest/gtest.h>
 
-constexpr size_t loop_count = 229;
+constexpr size_t loop_count = 101;
 
 
 template<hash::method M, int ... args>
