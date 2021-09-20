@@ -91,9 +91,11 @@ static inline void md2_update(md2_ctx *ctx, const byte *data, size_t len) {
 static inline void md2_final(md2_ctx *ctx, byte *hash) {
     int to_pad = (int) MD2_BLOCK_SIZE - ctx->len;
     if (to_pad > 0) {
+#ifdef __NVPTX__
+#pragma unroll
+#endif
         for (int i = ctx->len; i < MD2_BLOCK_SIZE; ++i) {
             ctx->data.write(i, (byte) to_pad);
-            //     memset(ctx->data + ctx->len, (byte) to_pad, (dword) to_pad);
         }
     }
     md2_transform(ctx, ctx->data);
