@@ -14,8 +14,8 @@ using sbb::runtime_index_wrapper;
 struct md2_ctx {
     int len = 0;
     runtime_byte_array<16> data{};
-    byte state[48] = {0};
-    byte checksum[16] = {0};
+    byte state[48]{};
+    byte checksum[16]{};
 };
 
 /**************************** VARIABLES *****************************/
